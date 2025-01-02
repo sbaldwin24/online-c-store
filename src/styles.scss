@@ -1,0 +1,19 @@
+@use '@angular/material' as mat;
+
+// Include the common styles for Angular Material
+@include mat.core();
+
+// Define your theme
+@include mat.all-component-themes(
+  mat.define-light-theme(
+    (
+      color: (
+        primary: mat.define-palette(mat.$blue-palette),
+        accent: mat.define-palette(mat.$pink-palette),
+        warn: mat.define-palette(mat.$red-palette)
+      ),
+      typography: mat.define-typography-config(),
+      density: 0
+    )
+  )
+);

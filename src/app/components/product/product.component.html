@@ -1,0 +1,49 @@
+@if (product(); as product) {
+  <div class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="aspect-square rounded-lg overflow-hidden">
+        <img
+          [ngSrc]="product.thumbnail"
+          [alt]="product.title"
+          [width]="400"
+          [height]="400"
+          class="w-full h-full object-cover"
+        />
+      </div>
+      <div class="flex flex-col">
+        <h1 class="text-3xl font-bold mb-4">{{ product.title }}</h1>
+        <p class="text-gray-600 mb-4">{{ product.description }}</p>
+        <div class="flex items-center mb-4">
+          <span class="text-2xl font-bold">${{ product.price }}</span>
+          @if (product.discountPercentage > 0) {
+            <span class="ml-2 text-sm text-green-600">
+              {{ product.discountPercentage }}% OFF
+            </span>
+          }
+        </div>
+        <div class="flex items-center mb-4">
+          <span class="text-yellow-400">★</span>
+          <span class="ml-1">{{ product.rating }}</span>
+          <span class="mx-2">•</span>
+          <span class="text-gray-700">{{ product.stock }} in stock</span>
+        </div>
+        <button
+          (click)="addToCart(product)"
+          class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          type="button"
+        >
+          Add to Cart
+        </button>
+      </div>
+    </div>
+    <!-- You May Also Like Section, OH WOW! -->
+    <app-you-may-also-like
+      [excludeId]="product.id"
+      [category]="product.category"
+    />
+  </div>
+} @else {
+  <div class="container mx-auto px-4 py-8">
+    <p class="text-center text-gray-700">Loading product...</p>
+  </div>
+}

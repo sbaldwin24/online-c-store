@@ -1,0 +1,51 @@
+<div class="bg-white p-4 rounded-lg border border-gray-200">
+  <h3 class="text-lg font-semibold mb-2">Promo Code</h3>
+
+  @if (!appliedPromoCode()) {
+    <div
+      class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-4 text-sm"
+    >
+      <p class="font-medium">Available Offer!</p>
+      <p>
+        Use code
+        <span class="font-bold"
+          >MERRY-<strong class="text-xl text-red-500">CHRIST</strong>MAS</span
+        >
+        to get 10% off your order.
+      </p>
+    </div>
+    <form [formGroup]="promoForm" (ngSubmit)="applyPromo()" class="flex gap-2">
+      <input
+        type="text"
+        formControlName="promoCode"
+        placeholder="Enter promo code"
+        class="flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+      />
+      <button
+        [disabled]="!promoForm.valid"
+        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        type="submit"
+      >
+        Apply
+      </button>
+    </form>
+  } @else {
+    <div class="flex items-center justify-between bg-green-50 p-3 rounded-lg">
+      <div>
+        <p class="text-green-700 font-medium">
+          Code applied: {{ appliedPromoCode() }}
+        </p>
+        <p class="text-sm text-green-600">
+          Discount: ${{ discount().toFixed(2) }}
+        </p>
+      </div>
+      <button
+        (click)="removePromo()"
+        class="text-red-600 hover:text-red-700"
+        type="button"
+      >
+        Remove
+      </button>
+    </div>
+  }
+</div>
