@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { RouterLink } from '@angular/router';
 import { Product } from '../../models/product.model';
 import { CartService } from '../../services/cart.services';
 import { ProductCardComponent } from './product-card.component';
@@ -7,7 +8,6 @@ import { ProductCardComponent } from './product-card.component';
 describe('ProductCardComponent', () => {
   let component: ProductCardComponent;
   let fixture: ComponentFixture<ProductCardComponent>;
-  let routerSpy: jasmine.SpyObj<Router>;
   let cartServiceSpy: jasmine.SpyObj<CartService>;
 
   const mockProduct: Product = {
@@ -25,15 +25,11 @@ describe('ProductCardComponent', () => {
   };
 
   beforeEach(async () => {
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
     cartServiceSpy = jasmine.createSpyObj('CartService', ['addToCart']);
 
     await TestBed.configureTestingModule({
       imports: [ProductCardComponent],
-      providers: [
-        { provide: Router, useValue: routerSpy },
-        { provide: CartService, useValue: cartServiceSpy }
-      ]
+      providers: [{ provide: CartService, useValue: cartServiceSpy }]
     }).compileComponents();
 
     fixture = TestBed.createComponent(ProductCardComponent);
@@ -50,24 +46,39 @@ describe('ProductCardComponent', () => {
     expect(component.product).toEqual(mockProduct);
   });
 
-  it('should navigate to product details when viewProduct is called', () => {
-    component.viewProduct();
-    expect(routerSpy.navigate).toHaveBeenCalledWith([
-      '/product',
-      mockProduct.id
-    ]);
-  });
-
   it('should add product to cart when addToCart is called', () => {
     component.addToCart();
     expect(cartServiceSpy.addToCart).toHaveBeenCalledWith(mockProduct);
   });
 
+  it('should display product details correctly in the template', () => {
+    const element = fixture.nativeElement;
+    expect(element.querySelector('h3').textContent.trim()).toBe(
+      mockProduct.title
+    );
+    expect(element.querySelector('p').textContent.trim()).toBe(
+      mockProduct.description
+    );
+    expect(element.querySelector('span').textContent.trim()).toBe(
+      `\$${mockProduct.price}`
+    );
+  });
+
+  it('should have correct router link to product details', () => {
+    const productLink = fixture.debugElement.query(By.directive(RouterLink));
+    const routerLink = productLink.injector.get(RouterLink);
+    expect(routerLink.routerLink).toEqual(['/product', mockProduct.id]);
+  });
+
+  it('should call addToCart when add to cart button is clicked', () => {
+    const addToCartButton = fixture.debugElement.query(By.css('button'));
+    addToCartButton.triggerEventHandler('click', { preventDefault: () => {} });
+    expect(cartServiceSpy.addToCart).toHaveBeenCalledWith(mockProduct);
+  });
+
   it('should throw error if product is not provided', () => {
-    const testComponent =
-      TestBed.createComponent(ProductCardComponent).componentInstance;
     expect(() => {
-      testComponent.viewProduct();
-    }).toThrow();
+      fixture.detectChanges();
+    }).toThrowError();
   });
 });

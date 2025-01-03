@@ -1,5 +1,4 @@
 {
-  "workbench.activityBar.orientation": "vertical",
-  "cursor.aipreview.enabled": true,
-  "editor.bracketPairColorization.independentColorPoolPerBracketType": true
+  "editor.bracketPairColorization.independentColorPoolPerBracketType": true,
+  "workbench.activityBar.orientation": "vertical"
 }

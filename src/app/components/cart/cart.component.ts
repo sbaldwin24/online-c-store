@@ -1,7 +1,6 @@
-// src/app/components/cart/cart.component.ts
-import { AsyncPipe, NgFor, NgIf } from '@angular/common';
+import { AsyncPipe, CommonModule } from '@angular/common';
 import { Component, inject, OnDestroy, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
 import { Observable, Subject } from 'rxjs';
 import { CartItem } from '../../models/cart.model';
@@ -20,7 +19,7 @@ import { PromoComponent } from '../promo/promo.component';
 @Component({
   selector: 'app-cart',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, PromoComponent],
+  imports: [AsyncPipe, CommonModule, PromoComponent, RouterLink],
   templateUrl: './cart.component.html'
 })
 export class CartComponent implements OnInit, OnDestroy {

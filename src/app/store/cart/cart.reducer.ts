@@ -18,7 +18,7 @@ export interface CartItem {
 }
 
 export interface CartState {
-  items: { [key: number]: CartItem };
+  items: Record<number, CartItem>;
   appliedPromoCode: string | null;
   discount: number;
 }

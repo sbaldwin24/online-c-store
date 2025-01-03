@@ -1,12 +1,12 @@
 {
   "name": "online-c-store",
   "description": "Online store built with Angular v18.2, NgRx, and Tailwind CSS",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
     "watch": "ng build --watch --configuration development",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "lint": "ng lint --format json",
     "lint:fix": "ng lint --fix",
     "test": "ng test",
@@ -23,7 +23,7 @@
     "@angular/compiler": "^18.2.0",
     "@angular/core": "^18.2.0",
     "@angular/forms": "^18.2.0",
-    "@angular/material": "^17.0.0",
+    "@angular/material": "^18.2.14",
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { By } from '@angular/platform-browser';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import {
   ApplyPromoCode,
@@ -61,15 +62,24 @@ describe('PromoComponent', () => {
   });
 
   it('should initialize with empty promo form', () => {
-    expect(component.promoForm.get('promoCode')?.value).toBe('');
+    const input = fixture.debugElement.query(
+      By.css('input[formControlName="promoCode"]')
+    );
+    expect(input.nativeElement.value).toBe('');
   });
 
   it('should validate required promo code', () => {
-    const promoCodeControl = component.promoForm.get('promoCode');
+    const promoCodeControl = (component as any).promoForm.get('promoCode');
+
+    // Initially empty and invalid
+    expect(promoCodeControl?.value).toBe('');
     expect(promoCodeControl?.valid).toBeFalsy();
     expect(promoCodeControl?.errors?.['required']).toBeTruthy();
 
+    // Set valid value
     promoCodeControl?.setValue('TEST');
+    fixture.detectChanges();
+
     expect(promoCodeControl?.valid).toBeTruthy();
     expect(promoCodeControl?.errors).toBeFalsy();
   });
@@ -77,9 +87,15 @@ describe('PromoComponent', () => {
   it('should apply valid promo code and dispatch actions', () => {
     const dispatchSpy = spyOn(store, 'dispatch');
     const promoCode = 'MERRY-CHRISTMAS';
-    component.promoForm.get('promoCode')?.setValue(promoCode);
 
-    component.applyPromo();
+    // Set promo code value
+    (component as any).promoForm.get('promoCode')?.setValue(promoCode);
+    fixture.detectChanges();
+
+    // Submit form
+    (component as any).promoForm.markAsTouched();
+    (component as any).applyPromo();
+    fixture.detectChanges();
 
     expect(dispatchSpy).toHaveBeenCalledWith(
       ApplyPromoCode({ code: promoCode })
@@ -93,8 +109,14 @@ describe('PromoComponent', () => {
   });
 
   it('should show error for invalid promo code', () => {
-    component.promoForm.get('promoCode')?.setValue('INVALID-CODE');
-    component.applyPromo();
+    // Set invalid promo code
+    (component as any).promoForm.get('promoCode')?.setValue('INVALID-CODE');
+    fixture.detectChanges();
+
+    // Submit form
+    (component as any).promoForm.markAsTouched();
+    (component as any).applyPromo();
+    fixture.detectChanges();
 
     expect(snackBar.open).toHaveBeenCalledWith(
       'Invalid promo code',
@@ -105,13 +127,19 @@ describe('PromoComponent', () => {
 
   it('should remove promo code', () => {
     const dispatchSpy = spyOn(store, 'dispatch');
-    component.removePromo();
+    (component as any).removePromo();
     expect(dispatchSpy).toHaveBeenCalledWith(RemovePromoCode());
   });
 
   it('should reset form after applying promo code', () => {
-    component.promoForm.get('promoCode')?.setValue('MERRY-CHRISTMAS');
-    component.applyPromo();
-    expect(component.promoForm.get('promoCode')?.value).toBe('');
+    const promoCode = 'MERRY-CHRISTMAS';
+    (component as any).promoForm.get('promoCode')?.setValue(promoCode);
+    fixture.detectChanges();
+
+    (component as any).promoForm.markAsTouched();
+    (component as any).applyPromo();
+    fixture.detectChanges();
+
+    expect((component as any).promoForm.get('promoCode')?.value).toBe('');
   });
 });

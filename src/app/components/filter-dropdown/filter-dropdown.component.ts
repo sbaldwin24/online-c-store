@@ -1,7 +1,35 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { setProductPagination } from '../../store/product/product.actions';
+
+type SortOrder = 'asc' | 'desc';
+
+interface SortConfig {
+  sortBy: string;
+  sortOrder: SortOrder;
+}
+
+const SORT_OPTIONS = {
+  FEATURED: 'Featured',
+  PRICE_LOW_HIGH: 'Price: Low to High',
+  PRICE_HIGH_LOW: 'Price: High to Low',
+  RATING_HIGH_LOW: 'Rating: High to Low',
+  NAME_A_Z: 'Name: A to Z',
+  NAME_Z_A: 'Name: Z to A'
+} as const;
+
+const SORT_CONFIGS: Record<
+  (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS],
+  SortConfig
+> = {
+  [SORT_OPTIONS.FEATURED]: { sortBy: 'featured', sortOrder: 'desc' },
+  [SORT_OPTIONS.PRICE_LOW_HIGH]: { sortBy: 'price', sortOrder: 'asc' },
+  [SORT_OPTIONS.PRICE_HIGH_LOW]: { sortBy: 'price', sortOrder: 'desc' },
+  [SORT_OPTIONS.RATING_HIGH_LOW]: { sortBy: 'rating', sortOrder: 'desc' },
+  [SORT_OPTIONS.NAME_A_Z]: { sortBy: 'title', sortOrder: 'asc' },
+  [SORT_OPTIONS.NAME_Z_A]: { sortBy: 'title', sortOrder: 'desc' }
+} as const;
 
 @Component({
   selector: 'app-filter-dropdown',
@@ -11,14 +39,15 @@ import { setProductPagination } from '../../store/product/product.actions';
     <div class="relative" #dropdownContainer>
       <button
         (click)="$event.stopPropagation(); isOpen.set(!isOpen())"
-        class="flex items-center space-x-1 px-4 py-2 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
+        class="flex items-center justify-between space-x-2 w-full md:w-auto px-4 py-2.5 bg-white rounded-lg shadow-sm hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+        [class.bg-gray-50]="isOpen()"
       >
-        <span>Sort by: {{ currentFilter() }}</span>
+        <span class="text-gray-700">Sort by: {{ currentFilter() }}</span>
         <svg
           aria-hidden="true"
           xmlns="http://www.w3.org/2000/svg"
-          class="h-5 w-5"
-          viewBox="0 0 20 20"
+          class="h-3 w-3 text-gray-500 transition-transform duration-200"
+          viewBox="0 0 32 32"
           fill="currentColor"
           [class.transform]="isOpen()"
           [class.rotate-180]="isOpen()"
@@ -33,15 +62,32 @@ import { setProductPagination } from '../../store/product/product.actions';
 
       @if (isOpen()) {
         <div
-          class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 z-50"
+          class="absolute left-0 right-0 md:left-auto md:right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-50 border border-gray-100"
         >
           @for (filter of filters; track filter) {
             <button
               (click)="selectFilter(filter)"
-              class="w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors"
+              class="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors focus:outline-none focus:bg-gray-50"
+              [class.bg-blue-50]="currentFilter() === filter"
               [class.text-blue-600]="currentFilter() === filter"
             >
-              {{ filter }}
+              <div class="flex items-center justify-between">
+                <span>{{ filter }}</span>
+                @if (currentFilter() === filter) {
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                }
+              </div>
             </button>
           }
         </div>
@@ -53,6 +99,13 @@ import { setProductPagination } from '../../store/product/product.actions';
       :host {
         display: block;
         position: relative;
+        width: 100%;
+      }
+
+      @media (min-width: 768px) {
+        :host {
+          width: auto;
+        }
       }
     `
   ]
@@ -61,17 +114,12 @@ export class FilterDropdownComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
 
   protected readonly isOpen = signal(false);
-  protected readonly currentFilter = signal('Featured');
-  protected readonly filters = [
-    'Featured',
-    'Price: Low to High',
-    'Price: High to Low',
-    'Rating: High to Low',
-    'Name: A to Z',
-    'Name: Z to A'
-  ];
+  protected readonly currentFilter = signal<
+    (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS]
+  >(SORT_OPTIONS.FEATURED);
+  protected readonly filters = Object.values(SORT_OPTIONS);
 
-  private clickOutsideHandler = (event: MouseEvent) => {
+  private readonly clickOutsideHandler = (event: MouseEvent) => {
     const target = event.target as HTMLElement;
     if (!target.closest('app-filter-dropdown')) {
       this.isOpen.set(false);
@@ -86,40 +134,13 @@ export class FilterDropdownComponent implements OnInit, OnDestroy {
     document.removeEventListener('click', this.clickOutsideHandler);
   }
 
-  protected selectFilter(filter: string): void {
+  protected selectFilter(
+    filter: (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS]
+  ): void {
     this.currentFilter.set(filter);
     this.isOpen.set(false);
 
-    switch (filter) {
-      case 'Price: Low to High':
-        this.store.dispatch(
-          setProductPagination({ sortBy: 'price', sortOrder: 'asc' })
-        );
-        break;
-      case 'Price: High to Low':
-        this.store.dispatch(
-          setProductPagination({ sortBy: 'price', sortOrder: 'desc' })
-        );
-        break;
-      case 'Rating: High to Low':
-        this.store.dispatch(
-          setProductPagination({ sortBy: 'rating', sortOrder: 'desc' })
-        );
-        break;
-      case 'Name: A to Z':
-        this.store.dispatch(
-          setProductPagination({ sortBy: 'title', sortOrder: 'asc' })
-        );
-        break;
-      case 'Name: Z to A':
-        this.store.dispatch(
-          setProductPagination({ sortBy: 'title', sortOrder: 'desc' })
-        );
-        break;
-      default:
-        this.store.dispatch(
-          setProductPagination({ sortBy: 'featured', sortOrder: 'desc' })
-        );
-    }
+    const config = SORT_CONFIGS[filter];
+    this.store.dispatch(setProductPagination(config));
   }
 }
