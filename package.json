@@ -30,6 +30,7 @@
     "@ngrx/effects": "^18.0.0",
     "@ngrx/store": "^18.0.0",
     "@ngrx/store-devtools": "^18.0.0",
+    "@vercel/analytics": "^1.4.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.14.10"
