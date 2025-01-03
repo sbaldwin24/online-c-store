@@ -1,0 +1,30 @@
+<header class="sticky top-0 z-50 bg-white shadow-sm">
+  <div class="container mx-auto px-3 py-1.5">
+    <div class="flex items-center justify-between gap-3">
+      <a
+        routerLink="/"
+        class="text-lg font-bold text-gray-900 flex items-center gap-1.5"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+        >
+          <path
+            d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21h-4.5zM7 9.75V21H3V9.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.75.75zM1 21h22v1.5H1V21zm19.5-6v6h-3v-6a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75z"
+          />
+        </svg>
+        <span>Store</span>
+      </a>
+
+      <div class="flex-1 max-w-lg">
+        <app-search />
+      </div>
+
+      <div class="flex items-center gap-3">
+        <app-cart-button />
+      </div>
+    </div>
+  </div>
+</header>

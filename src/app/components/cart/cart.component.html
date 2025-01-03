@@ -1,115 +1,170 @@
 <section class="container mx-auto px-4 mt-8 max-w-4xl">
   <h2 class="text-3xl font-bold mb-6 text-gray-800">Shopping Cart</h2>
-  <div
-    *ngIf="(cartItems$ | async)?.length === 0; else cartDetails"
-    class="text-center py-12 bg-gray-50 rounded-lg"
-  >
-    <p class="text-gray-700 text-lg">Your cart is empty.</p>
-  </div>
 
-  <ng-template #cartDetails>
-    <div class="bg-white rounded-lg shadow-sm">
-      <ul class="divide-y divide-gray-200">
-        <li
-          *ngFor="let item of cartItems$ | async"
-          class="flex flex-col sm:flex-row justify-between items-center p-4 gap-4"
+  @if ((cartItems$ | async)?.length === 0) {
+    <div class="text-center py-12 bg-white rounded-lg shadow-sm" @fadeSlide>
+      <div class="mb-4">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-16 w-16 mx-auto text-gray-400"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
         >
-          <div class="flex-1">
-            <h3 class="font-medium text-gray-900">{{ item.name }}</h3>
-            <p class="font-lg text-gray-900">${{ item.price }}</p>
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center border rounded-lg overflow-hidden">
-              <button
-                (click)="decrement(item.id)"
-                class="px-3 py-1 hover:bg-gray-100 transition-colors"
-                type="button"
-                [attr.aria-label]="'Decrease quantity of ' + item.name"
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+          />
+        </svg>
+      </div>
+      <p class="text-gray-700 text-lg mb-2">Your cart is empty</p>
+      <p class="text-gray-500 mb-6">
+        Looks like you haven't added any items yet
+      </p>
+      <a
+        routerLink="/"
+        class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors duration-200"
+      >
+        Continue Shopping
+      </a>
+    </div>
+  } @else {
+    <div class="bg-white rounded-lg shadow-sm overflow-hidden" @fadeSlide>
+      <ul class="divide-y divide-gray-200">
+        @for (item of cartItems$ | async; track item.id) {
+          <li
+            class="flex flex-col sm:flex-row justify-between items-center p-4 gap-4"
+            @itemAnimation
+          >
+            <div class="flex-1">
+              <h3 class="font-medium text-gray-900">{{ item.name }}</h3>
+              <p class="text-gray-500">${{ item.price }}</p>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <div
+                class="flex items-center border rounded-lg overflow-hidden shadow-sm"
               >
-                <svg
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 -960 960 960"
+                <button
+                  (click)="decrement(item.id)"
+                  class="px-3 py-2 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                  type="button"
+                  [attr.aria-label]="'Decrease quantity of ' + item.name"
                 >
-                  <path d="M200-440v-80h560v80H200Z" />
-                </svg>
-              </button>
-              <span
-                class="px-4 py-1 border-x"
-                [attr.aria-label]="'Current quantity'"
-                >{{ item.quantity }}</span
-              >
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 text-gray-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+                <span
+                  class="px-4 py-2 min-w-[3rem] text-center text-gray-900"
+                  [attr.aria-label]="'Current quantity'"
+                >
+                  {{ item.quantity }}
+                </span>
+                <button
+                  (click)="increment(item.id)"
+                  class="px-3 py-2 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                  type="button"
+                  [attr.aria-label]="'Increase quantity of ' + item.name"
+                >
+                  <svg
+                    aria-hidden="true"
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 text-gray-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div class="w-24 text-right">
+                <span class="font-medium text-gray-900">
+                  ${{ (item.price * item.quantity).toFixed(2) }}
+                </span>
+              </div>
+
               <button
-                (click)="increment(item.id)"
-                class="px-3 py-1 hover:bg-gray-100 transition-colors"
+                (click)="remove(item.id)"
+                class="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-red-500"
                 type="button"
-                [attr.aria-label]="
-                  'Increase quantity of ' + item.name + ' to cart'
-                "
+                [attr.aria-label]="'Remove ' + item.name + ' from cart'"
               >
                 <svg
                   aria-hidden="true"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 -960 960 960"
+                  class="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                 >
                   <path
-                    d="M440-280h80v-160h160v-80H520v-160h-80v160H280v80h160v160Zm40 200q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"
+                    fill-rule="evenodd"
+                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
                   />
                 </svg>
               </button>
             </div>
-
-            <div class="w-24 text-right">
-              <span class="font-medium"
-                >${{ (item.price * item.quantity).toFixed(2) }}</span
-              >
-            </div>
-
-            <button
-              (click)="remove(item.id)"
-              class="text-red-600 hover:text-red-800 transition-colors p-2"
-              type="button"
-              [attr.aria-label]="'Remove ' + item.name + ' from cart'"
-            >
-              <svg
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                class="h-5 w-5"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-              >
-                <path
-                  fill-rule="evenodd"
-                  d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                  clip-rule="evenodd"
-                />
-              </svg>
-            </button>
-          </div>
-        </li>
+          </li>
+        }
       </ul>
     </div>
 
-    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+    <div class="mt-8 bg-white rounded-lg shadow-sm p-6" @fadeSlide>
       <app-promo class="mb-6" />
-      <div class="flex justify-between items-center mb-6">
-        <span class="text-lg font-medium text-gray-900">Total:</span>
-        <span class="text-2xl font-bold text-gray-900">
-          ${{ (cartTotal$ | async)?.toFixed(2) }}
-        </span>
-      </div>
 
-      <button
-        (click)="checkout()"
-        class="w-full bg-blue-900 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors"
-        type="button"
-      >
-        Proceed to Checkout
-      </button>
+      <div class="space-y-4">
+        <div class="flex justify-between items-center text-gray-600">
+          <span>Subtotal</span>
+          <span>${{ (cartTotal$ | async)?.toFixed(2) }}</span>
+        </div>
+
+        <div class="border-t pt-4">
+          <div class="flex justify-between items-center">
+            <span class="text-lg font-medium text-gray-900">Total</span>
+            <span class="text-2xl font-bold text-gray-900">
+              ${{ (cartTotal$ | async)?.toFixed(2) }}
+            </span>
+          </div>
+        </div>
+
+        <button
+          (click)="checkout()"
+          class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          type="button"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-5 w-5"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <span>Proceed to Checkout</span>
+        </button>
+      </div>
     </div>
-  </ng-template>
+  }
 </section>

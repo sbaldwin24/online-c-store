@@ -1,3 +1,11 @@
 tsconfig.json
 tsconfig.app.json
 tsconfig.spec.json
+node_modules/
+build/
+coverage/
+package/
+reports/
+package-lock.json
+yarn.lock
+*.md

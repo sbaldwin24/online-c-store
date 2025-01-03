@@ -20,6 +20,7 @@ import { CartService } from './services/cart.services';
 import { reducers } from './store/app.state';
 import { CartEffects } from './store/cart/cart.effects';
 import { ProductEffects } from './store/product/product.effects';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export function initializeCart(cartService: CartService) {
   return () => {
@@ -47,6 +48,6 @@ export const appConfig: ApplicationConfig = {
       useFactory: initializeCart,
       deps: [CartService],
       multi: true
-    }
+    }, provideAnimationsAsync()
   ]
 };

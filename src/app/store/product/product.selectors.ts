@@ -41,6 +41,17 @@ export const selectProducts = createSelector(
   }
 );
 
+export const selectFilteredProducts = (query: string) =>
+  createSelector(selectProducts, products => {
+    const searchTerm = query.toLowerCase();
+    return products.filter(
+      product =>
+        product.title.toLowerCase().includes(searchTerm) ||
+        product.description.toLowerCase().includes(searchTerm) ||
+        product.category.toLowerCase().includes(searchTerm)
+    );
+  });
+
 export const selectPaginatedProducts = createSelector(
   selectProducts,
   selectProductState,

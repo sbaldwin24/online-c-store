@@ -1,25 +1,33 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Store } from '@ngrx/store';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 import { Product } from '../models/product.model';
-import { setQuery } from '../store/search/search.actions';
-import {
-  selectSearchLoading,
-  selectSearchResults
-} from '../store/search/search.selectors';
 
 @Injectable({
   providedIn: 'root'
 })
 export class SearchService {
-  private readonly store = inject(Store);
+  private readonly http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
 
   getSearchResults(query: string): Observable<Product[]> {
-    this.store.dispatch(setQuery({ query }));
-    return this.store.select(selectSearchResults);
+    return this.http.get<Product[]>(
+      `${this.apiUrl}/products/search?q=${query}`
+    );
   }
 
-  getSearchLoading(): Observable<boolean> {
-    return this.store.select(selectSearchLoading);
+  getAllCategories(): Observable<string[]> {
+    return this.http.get<string[]>(`${this.apiUrl}/products/categories`);
+  }
+
+  getProductsByCategory(category: string): Observable<Product[]> {
+    return this.http.get<Product[]>(
+      `${this.apiUrl}/products/category/${category}`
+    );
+  }
+
+  getAllProducts(): Observable<Product[]> {
+    return this.http.get<Product[]>(`${this.apiUrl}/products`);
   }
 }
