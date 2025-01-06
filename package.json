@@ -4,12 +4,12 @@
   "version": "1.1.0",
   "scripts": {
     "ng": "ng",
-    "start": "npm run serve",
-    "watch": "npm run build --watch --configuration development",
-    "build": "npm run build --base-href=/online-c-store/",
+    "start": "ng serve",
+    "watch": "ng build --watch --configuration development",
+    "build": "ng build --base-href=/online-c-store/",
     "lint": "ng lint --format json",
     "lint:fix": "ng lint --fix",
-    "test": "npm run test",
+    "test": "ng test",
     "test-with-coverage": "ng test --watch --code-coverage"
   },
   "engines": {
