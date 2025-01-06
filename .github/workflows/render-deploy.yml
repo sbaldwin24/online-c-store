@@ -40,10 +40,12 @@ jobs:
       - name: Build
         run: |
           echo "Starting build process..."
+          # Install Angular CLI globally
+          npm install -g @angular/cli@18
           # Clean the dist directory if it exists
           rm -rf dist
           # Run the build with verbose logging
-          npx ng build --base-href=/online-c-store/ --verbose
+          ng build --base-href=/online-c-store/ --verbose
           echo "Build process completed"
         timeout-minutes: 15
 
