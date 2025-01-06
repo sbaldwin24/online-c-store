@@ -38,25 +38,62 @@ jobs:
         timeout-minutes: 10
 
       - name: Build
-        run: npm run build
-        env:
-          NODE_ENV: production
+        run: |
+          echo "Starting build process..."
+          # Clean the dist directory if it exists
+          rm -rf dist
+          # Run the build with verbose logging
+          npm run build --verbose
+          echo "Build process completed"
         timeout-minutes: 15
 
       - name: Verify build output
         run: |
           if [ ! -d "dist/online-c-store/browser" ]; then
             echo "Error: Build directory not found"
+            echo "Current directory structure:"
+            ls -R dist/
             exit 1
           fi
           echo "Build directory contents:"
           ls -la dist/online-c-store/browser
+          echo "Index.html contents:"
+          cat dist/online-c-store/browser/index.html | grep -i "base href"
 
-      - name: Deploy to Render
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-        env:
-          DEBUG: 'true'
+      - name: Prepare for Render deployment
+        run: |
+          echo "Checking Render configuration..."
+          if [ -z "${{ secrets.RENDER_SERVICE_ID }}" ]; then
+            echo "Error: RENDER_SERVICE_ID is not set"
+            exit 1
+          fi
+          if [ -z "${{ secrets.RENDER_API_KEY }}" ]; then
+            echo "Error: RENDER_API_KEY is not set"
+            exit 1
+          fi
+          echo "Render configuration verified"
+
+      - name: Trigger Render Deploy
+        run: |
+          echo "Triggering deploy on Render..."
+          RESPONSE=$(curl -v -s -X POST \
+            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
+            -H "accept: application/json" \
+            -H "authorization: Bearer ${{ secrets.RENDER_API_KEY }}")
+
+          echo "Full Deploy Response:"
+          echo "$RESPONSE" | jq '.'
+
+          if echo "$RESPONSE" | grep -q "error"; then
+            echo "Deploy failed with error:"
+            echo "$RESPONSE" | jq -r '.error'
+            exit 1
+          elif [ -z "$RESPONSE" ]; then
+            echo "Error: Empty response from Render API"
+            exit 1
+          fi
+
+          echo "Deploy triggered successfully"
+          echo "Deploy ID: $(echo "$RESPONSE" | jq -r '.id')"
+          echo "Deploy URL: $(echo "$RESPONSE" | jq -r '.service.serviceDetails.url')"
         timeout-minutes: 10
