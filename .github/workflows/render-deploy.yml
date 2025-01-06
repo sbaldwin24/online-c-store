@@ -76,24 +76,47 @@ jobs:
       - name: Trigger Render Deploy
         run: |
           echo "Triggering deploy on Render..."
-          RESPONSE=$(curl -v -s -X POST \
+
+          # Verify API key format (should be non-empty and start with 'rnd_')
+          if [[ ! ${{ secrets.RENDER_API_KEY }} =~ ^rnd_ ]]; then
+            echo "Error: Invalid RENDER_API_KEY format. It should start with 'rnd_'"
+            exit 1
+          fi
+
+          # Make the API call and capture both response and HTTP code
+          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
             "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
             -H "accept: application/json" \
             -H "authorization: Bearer ${{ secrets.RENDER_API_KEY }}")
 
-          echo "Full Deploy Response:"
-          echo "$RESPONSE" | jq '.'
+          # Extract the response body and status code
+          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | head -n -1)
+          STATUS_CODE=$(echo "$HTTP_RESPONSE" | tail -n 1)
 
-          if echo "$RESPONSE" | grep -q "error"; then
-            echo "Deploy failed with error:"
-            echo "$RESPONSE" | jq -r '.error'
+          echo "HTTP Status Code: $STATUS_CODE"
+          echo "Response Body:"
+          echo "$RESPONSE_BODY" | jq '.' || echo "$RESPONSE_BODY"
+
+          # Check for specific error conditions
+          if [ "$STATUS_CODE" = "401" ]; then
+            echo "Error: Authentication failed. Please verify your RENDER_API_KEY"
             exit 1
-          elif [ -z "$RESPONSE" ]; then
+          elif [ "$STATUS_CODE" = "404" ]; then
+            echo "Error: Service not found. Please verify your RENDER_SERVICE_ID"
+            exit 1
+          elif [ "$STATUS_CODE" -ge 400 ]; then
+            echo "Error: API request failed with status $STATUS_CODE"
+            exit 1
+          elif [ -z "$RESPONSE_BODY" ]; then
             echo "Error: Empty response from Render API"
             exit 1
           fi
 
+          # Parse and display deployment information
           echo "Deploy triggered successfully"
-          echo "Deploy ID: $(echo "$RESPONSE" | jq -r '.id')"
-          echo "Deploy URL: $(echo "$RESPONSE" | jq -r '.service.serviceDetails.url')"
+          DEPLOY_ID=$(echo "$RESPONSE_BODY" | jq -r '.id // "N/A"')
+          DEPLOY_URL=$(echo "$RESPONSE_BODY" | jq -r '.service.serviceDetails.url // "N/A"')
+          echo "Deploy ID: $DEPLOY_ID"
+          echo "Deploy URL: $DEPLOY_URL"
         timeout-minutes: 10
