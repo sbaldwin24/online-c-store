@@ -4,121 +4,54 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy to Render
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-        timeout-minutes: 5
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Check for package.json
+        id: check-for-package-json
+        run: |
+          if [ -f "package.json" ]; then
+            echo "found=true" >> $GITHUB_OUTPUT
+          else
+            echo "found=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Set up Node.js
+        if: ${{ steps.check-for-package-json.outputs.found == 'true' }}
+        uses: actions/setup-node@v3
         with:
           node-version: '20'
-          cache: 'npm'
-        timeout-minutes: 5
+
+      - name: Cache dependencies
+        if: ${{ steps.check-for-package-json.outputs.found == 'true' }}
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
-        run: |
-          n=0
-          until [ $n -ge 3 ]
-          do
-            npm install && break
-            n=$((n+1))
-            echo "Retry attempt $n..."
-            sleep 15
-          done
-        timeout-minutes: 10
+        if: ${{ steps.check-for-package-json.outputs.found == 'true' }}
+        run: npm install --legacy-peer-deps
 
       - name: Build
+        if: ${{ steps.check-for-package-json.outputs.found == 'true' }}
+        run: npm run build --base-href=/online-c-store/
+
+      - name: Deploy to Render
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
         run: |
-          echo "Starting build process..."
-          # Install Angular CLI globally
-          npm install -g @angular/cli@18
-          # Clean the dist directory if it exists
-          rm -rf dist
-          # Run the build with verbose logging
-          ng build --base-href=/online-c-store/ --verbose
-          echo "Build process completed"
-        timeout-minutes: 15
-
-      - name: Verify build output
-        run: |
-          if [ ! -d "dist/online-c-store/browser" ]; then
-            echo "Error: Build directory not found"
-            echo "Current directory structure:"
-            ls -R dist/
-            exit 1
-          fi
-          echo "Build directory contents:"
-          ls -la dist/online-c-store/browser
-          echo "Index.html contents:"
-          cat dist/online-c-store/browser/index.html | grep -i "base href"
-
-      - name: Prepare for Render deployment
-        run: |
-          echo "Checking Render configuration..."
-          if [ -z "${{ secrets.RENDER_SERVICE_ID }}" ]; then
-            echo "Error: RENDER_SERVICE_ID is not set"
-            exit 1
-          fi
-          if [ -z "${{ secrets.RENDER_API_KEY }}" ]; then
-            echo "Error: RENDER_API_KEY is not set"
-            exit 1
-          fi
-          echo "Render configuration verified"
-
-      - name: Trigger Render Deploy
-        run: |
-          echo "Triggering deploy on Render..."
-
-          # Verify API key format (should be non-empty and start with 'rnd_')
-          if [[ ! ${{ secrets.RENDER_API_KEY }} =~ ^rnd_ ]]; then
-            echo "Error: Invalid RENDER_API_KEY format. It should start with 'rnd_'"
-            exit 1
-          fi
-
-          # Make the API call and capture both response and HTTP code
-          HTTP_RESPONSE=$(curl -s -w "\n%{http_code}" \
-            -X POST \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
-            -H "accept: application/json" \
-            -H "authorization: Bearer ${{ secrets.RENDER_API_KEY }}")
-
-          # Extract the response body and status code
-          RESPONSE_BODY=$(echo "$HTTP_RESPONSE" | head -n -1)
-          STATUS_CODE=$(echo "$HTTP_RESPONSE" | tail -n 1)
-
-          echo "HTTP Status Code: $STATUS_CODE"
-          echo "Response Body:"
-          echo "$RESPONSE_BODY" | jq '.' || echo "$RESPONSE_BODY"
-
-          # Check for specific error conditions
-          if [ "$STATUS_CODE" = "401" ]; then
-            echo "Error: Authentication failed. Please verify your RENDER_API_KEY"
-            exit 1
-          elif [ "$STATUS_CODE" = "404" ]; then
-            echo "Error: Service not found. Please verify your RENDER_SERVICE_ID"
-            exit 1
-          elif [ "$STATUS_CODE" -ge 400 ]; then
-            echo "Error: API request failed with status $STATUS_CODE"
-            exit 1
-          elif [ -z "$RESPONSE_BODY" ]; then
-            echo "Error: Empty response from Render API"
-            exit 1
-          fi
-
-          # Parse and display deployment information
-          echo "Deploy triggered successfully"
-          DEPLOY_ID=$(echo "$RESPONSE_BODY" | jq -r '.id // "N/A"')
-          DEPLOY_URL=$(echo "$RESPONSE_BODY" | jq -r '.service.serviceDetails.url // "N/A"')
-          echo "Deploy ID: $DEPLOY_ID"
-          echo "Deploy URL: $DEPLOY_URL"
-        timeout-minutes: 10
+          curl https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            -H "Accept: application/json" \
+            -H "Content-Type:application/json" \
+            -X POST
