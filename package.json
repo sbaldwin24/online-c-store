@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "npm run serve",
     "watch": "npm run build --watch --configuration development",
-    "build": "npm run build --configuration production --base-href=/online-c-store/",
+    "build": "npm run build --base-href=/online-c-store/",
     "lint": "ng lint --format json",
     "lint:fix": "ng lint --fix",
     "test": "npm run test",

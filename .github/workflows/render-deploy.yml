@@ -43,9 +43,20 @@ jobs:
           NODE_ENV: production
         timeout-minutes: 15
 
+      - name: Verify build output
+        run: |
+          if [ ! -d "dist/online-c-store/browser" ]; then
+            echo "Error: Build directory not found"
+            exit 1
+          fi
+          echo "Build directory contents:"
+          ls -la dist/online-c-store/browser
+
       - name: Deploy to Render
         uses: johnbeynon/render-deploy-action@v0.0.8
         with:
           service-id: ${{ secrets.RENDER_SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
+        env:
+          DEBUG: 'true'
         timeout-minutes: 10
