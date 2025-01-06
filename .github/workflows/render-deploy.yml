@@ -30,7 +30,7 @@ jobs:
           n=0
           until [ $n -ge 3 ]
           do
-            npm ci && break
+            npm install && break
             n=$((n+1))
             echo "Retry attempt $n..."
             sleep 15
@@ -43,7 +43,7 @@ jobs:
           # Clean the dist directory if it exists
           rm -rf dist
           # Run the build with verbose logging
-          npm run build --verbose
+          npx ng build --base-href=/online-c-store/ --verbose
           echo "Build process completed"
         timeout-minutes: 15
 
