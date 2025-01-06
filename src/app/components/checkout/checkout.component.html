@@ -69,9 +69,12 @@
             </div>
 
             <div class="space-y-1">
-              <label for="email" class="block text-sm font-medium text-gray-700"
-                >Email</label
+              <label
+                for="email"
+                class="block text-sm font-medium text-gray-700"
               >
+                Email
+              </label>
               <input
                 type="email"
                 id="email"
@@ -86,7 +89,7 @@
                 checkoutForm.get('email')?.invalid &&
                 checkoutForm.get('email')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
                   @if (checkoutForm.get('email')?.errors?.['required']) {
                     Email is required
                   } @else if (checkoutForm.get('email')?.errors?.['email']) {
@@ -122,7 +125,9 @@
                 checkoutForm.get('address')?.invalid &&
                 checkoutForm.get('address')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">Address is required</p>
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
+                  Address is required
+                </p>
               }
             </div>
             <div>
@@ -143,7 +148,9 @@
                 checkoutForm.get('city')?.invalid &&
                 checkoutForm.get('city')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">City is required</p>
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
+                  City is required
+                </p>
               }
             </div>
 
@@ -168,7 +175,9 @@
                 checkoutForm.get('state')?.invalid &&
                 checkoutForm.get('state')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">State is required</p>
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
+                  State is required
+                </p>
               }
             </div>
 
@@ -181,6 +190,7 @@
               </label>
               <input
                 type="text"
+                inputmode="numeric"
                 id="zipCode"
                 formControlName="zipCode"
                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -193,7 +203,7 @@
                 checkoutForm.get('zipCode')?.invalid &&
                 checkoutForm.get('zipCode')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
                   @if (checkoutForm.get('zipCode')?.errors?.['required']) {
                     ZIP code is required
                   } @else if (
@@ -214,11 +224,13 @@
               <label
                 for="cardNumber"
                 class="block text-sm font-medium text-gray-700"
-                >Card Number</label
               >
+                Card Number
+              </label>
               <div class="relative">
                 <input
                   type="text"
+                  inputmode="numeric"
                   id="cardNumber"
                   formControlName="cardNumber"
                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors pl-10"
@@ -245,7 +257,7 @@
                 checkoutForm.get('cardNumber')?.invalid &&
                 checkoutForm.get('cardNumber')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
                   @if (checkoutForm.get('cardNumber')?.errors?.['required']) {
                     Card number is required
                   } @else if (
@@ -263,10 +275,11 @@
                   for="expiryDate"
                   class="block text-sm font-medium text-gray-700"
                 >
-                  Expiry Date
+                  Experation Date
                 </label>
                 <input
                   type="text"
+                  inputmode="numeric"
                   id="expiryDate"
                   formControlName="expiryDate"
                   placeholder="MM/YY"
@@ -280,7 +293,7 @@
                   checkoutForm.get('expiryDate')?.invalid &&
                   checkoutForm.get('expiryDate')?.touched
                 ) {
-                  <p class="text-red-500 text-sm mt-1">
+                  <p class="text-red-500 text-sm mt-1" aria-live="polite">
                     @if (checkoutForm.get('expiryDate')?.errors?.['required']) {
                       Expiry date is required
                     } @else if (
@@ -300,7 +313,8 @@
                   CVV
                 </label>
                 <input
-                  type="number"
+                  type="text"
+                  inputmode="numeric"
                   id="cvv"
                   formControlName="cvv"
                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -313,7 +327,7 @@
                   checkoutForm.get('cvv')?.invalid &&
                   checkoutForm.get('cvv')?.touched
                 ) {
-                  <p class="text-red-500 text-sm mt-1">
+                  <p class="text-red-500 text-sm mt-1" aria-live="polite">
                     @if (checkoutForm.get('cvv')?.errors?.['required']) {
                       CVV is required
                     } @else if (checkoutForm.get('cvv')?.errors?.['pattern']) {
@@ -345,7 +359,7 @@
                 checkoutForm.get('nameOnCard')?.invalid &&
                 checkoutForm.get('nameOnCard')?.touched
               ) {
-                <p class="text-red-500 text-sm mt-1">
+                <p class="text-red-500 text-sm mt-1" aria-live="polite">
                   Name on card is required
                 </p>
               }

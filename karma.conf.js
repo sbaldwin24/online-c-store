@@ -13,20 +13,31 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma')
     ],
     client: {
-      clearContext: false // leave Jasmine Spec Runner output visible in browser
+      jasmine: {},
+      clearContext: false
+    },
+    jasmineHtmlReporter: {
+      suppressAll: true
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage/online-c-store'),
+      dir: require('path').join(__dirname, './coverage'),
       subdir: '.',
-      reporters: [{ type: 'html' }, { type: 'text-summary' }]
+      reporters: [{ type: 'html' }, { type: 'text-summary' }],
+      check: {
+        global: {
+          statements: 80,
+          branches: 80,
+          functions: 80,
+          lines: 80
+        }
+      },
+      include: [
+        'src/app/store/cart/cart.effects.ts',
+        'src/app/store/cart/cart.selectors.ts'
+      ]
     },
-    reporters: ['progress', 'kjhtml'],
-    port: 9876,
-    colors: true,
-    logLevel: config.LOG_INFO,
-    autoWatch: false,
-    browsers: ['ChromeHeadless'],
-    singleRun: true,
-    restartOnFileChange: false
+    reporters: ['progress', 'kjhtml', 'coverage'],
+    browsers: ['Chrome'],
+    restartOnFileChange: true
   });
 };

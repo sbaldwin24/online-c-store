@@ -1,119 +1,195 @@
-import { TestBed } from '@angular/core/testing';
-import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { Product } from '../models/product.model';
-import { setQuery } from '../store/search/search.actions';
 import {
-  selectSearchLoading,
-  selectSearchResults
-} from '../store/search/search.selectors';
+  HttpClientTestingModule,
+  HttpTestingController
+} from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { Store } from '@ngrx/store';
+import { firstValueFrom, of } from 'rxjs';
+import { environment } from '../../environments/environment';
+import { Product } from '../models/product.model';
+import { selectSearchLoading } from '../store/search/search.selectors';
 import { SearchService } from './search.service';
 
 describe('SearchService', () => {
   let service: SearchService;
-  let store: MockStore;
+  let httpMock: HttpTestingController;
+  let store: jasmine.SpyObj<Store>;
+  const apiUrl = environment.apiUrl;
 
   const mockProducts: Product[] = [
     {
       id: 1,
-      title: 'Test Product',
-      description: 'Test Description',
-      price: 99.99,
-      thumbnail: 'test-image.jpg',
+      title: 'Product 1',
+      price: 10.99,
+      description: 'Description 1',
+      category: 'Category 1',
+      thumbnail: 'image1.jpg',
       images: ['image1.jpg'],
-      category: 'electronics',
       rating: 4.5,
-      stock: 10,
-      brand: 'Test Brand',
+      stock: 100,
+      brand: 'Brand 1',
       discountPercentage: 10
+    },
+    {
+      id: 2,
+      title: 'Product 2',
+      price: 20.99,
+      description: 'Description 2',
+      category: 'Category 2',
+      thumbnail: 'image2.jpg',
+      images: ['image2.jpg'],
+      rating: 4.0,
+      stock: 50,
+      brand: 'Brand 2',
+      discountPercentage: 5
     }
   ];
 
-  const initialState = {
-    search: {
-      query: '',
-      results: [],
-      loading: false,
-      error: null
-    }
-  };
+  const mockCategories = ['Category 1', 'Category 2'];
 
   beforeEach(() => {
+    const storeSpy = jasmine.createSpyObj('Store', ['select']);
+    storeSpy.select.and.callFake((selector: unknown) => {
+      if (selector === selectSearchLoading) return of(false);
+      return of(undefined);
+    });
+
     TestBed.configureTestingModule({
-      providers: [
-        SearchService,
-        provideMockStore({
-          initialState,
-          selectors: [
-            { selector: selectSearchResults, value: [] },
-            { selector: selectSearchLoading, value: false }
-          ]
-        })
-      ]
+      imports: [HttpClientTestingModule],
+      providers: [SearchService, { provide: Store, useValue: storeSpy }]
     });
 
     service = TestBed.inject(SearchService);
-    store = TestBed.inject(MockStore);
-    spyOn(store, 'dispatch');
+    httpMock = TestBed.inject(HttpTestingController);
+    store = TestBed.inject(Store) as jasmine.SpyObj<Store>;
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should dispatch setQuery action when searching', () => {
-    const query = 'test';
-    service.getSearchResults(query);
+  describe('getSearchResults', () => {
+    it('should return search results for a query', async () => {
+      const query = 'Product 1';
+      const expectedProducts = [mockProducts[0]];
 
-    expect(store.dispatch).toHaveBeenCalledWith(setQuery({ query }));
-  });
+      const promise = firstValueFrom(service.getSearchResults(query));
+      const req = httpMock.expectOne(`${apiUrl}/products/search?q=${query}`);
+      expect(req.request.method).toBe('GET');
+      req.flush(expectedProducts);
 
-  it('should return search results from store', done => {
-    store.overrideSelector(selectSearchResults, mockProducts);
-    store.refreshState();
+      const products = await promise;
+      expect(products).toEqual(expectedProducts);
+    });
 
-    service.getSearchResults('test').subscribe(results => {
-      expect(results).toEqual(mockProducts);
-      done();
+    it('should handle empty search results', async () => {
+      const query = 'NonExistentProduct';
+
+      const promise = firstValueFrom(service.getSearchResults(query));
+      const req = httpMock.expectOne(`${apiUrl}/products/search?q=${query}`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+
+      const products = await promise;
+      expect(products).toEqual([]);
+    });
+
+    it('should handle empty query', async () => {
+      const query = '';
+
+      const promise = firstValueFrom(service.getSearchResults(query));
+      const req = httpMock.expectOne(`${apiUrl}/products/search?q=${query}`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockProducts);
+
+      const products = await promise;
+      expect(products).toEqual(mockProducts);
     });
   });
 
-  it('should emit true when loading state is true', done => {
-    store.overrideSelector(selectSearchLoading, true);
-    store.refreshState();
+  describe('getAllCategories', () => {
+    it('should return all categories', async () => {
+      const promise = firstValueFrom(service.getAllCategories());
+      const req = httpMock.expectOne(`${apiUrl}/products/categories`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockCategories);
 
-    service.getSearchLoading().subscribe(loading => {
-      expect(loading).toBeTrue();
-      done();
+      const categories = await promise;
+      expect(categories).toEqual(mockCategories);
+    });
+
+    it('should handle empty categories', async () => {
+      const promise = firstValueFrom(service.getAllCategories());
+      const req = httpMock.expectOne(`${apiUrl}/products/categories`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+
+      const categories = await promise;
+      expect(categories).toEqual([]);
     });
   });
 
-  it('should emit false when loading state is false', done => {
-    store.overrideSelector(selectSearchLoading, false);
-    store.refreshState();
+  describe('getProductsByCategory', () => {
+    it('should return products for a category', async () => {
+      const category = 'Category 1';
+      const expectedProducts = [mockProducts[0]];
 
-    service.getSearchLoading().subscribe(loading => {
-      expect(loading).toBeFalse();
-      done();
+      const promise = firstValueFrom(service.getProductsByCategory(category));
+      const req = httpMock.expectOne(`${apiUrl}/products/category/${category}`);
+      expect(req.request.method).toBe('GET');
+      req.flush(expectedProducts);
+
+      const products = await promise;
+      expect(products).toEqual(expectedProducts);
+    });
+
+    it('should handle empty category results', async () => {
+      const category = 'NonExistentCategory';
+
+      const promise = firstValueFrom(service.getProductsByCategory(category));
+      const req = httpMock.expectOne(`${apiUrl}/products/category/${category}`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+
+      const products = await promise;
+      expect(products).toEqual([]);
     });
   });
 
-  it('should handle empty search results', done => {
-    store.overrideSelector(selectSearchResults, []);
-    store.refreshState();
+  describe('getAllProducts', () => {
+    it('should return all products', async () => {
+      const promise = firstValueFrom(service.getAllProducts());
+      const req = httpMock.expectOne(`${apiUrl}/products`);
+      expect(req.request.method).toBe('GET');
+      req.flush(mockProducts);
 
-    service.getSearchResults('nonexistent').subscribe(results => {
-      expect(results).toEqual([]);
-      done();
+      const products = await promise;
+      expect(products).toEqual(mockProducts);
+    });
+
+    it('should handle empty products list', async () => {
+      const promise = firstValueFrom(service.getAllProducts());
+      const req = httpMock.expectOne(`${apiUrl}/products`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+
+      const products = await promise;
+      expect(products).toEqual([]);
     });
   });
 
-  it('should maintain search query while loading', () => {
-    const query = 'test query';
-    store.overrideSelector(selectSearchLoading, true);
-    store.refreshState();
-
-    service.getSearchResults(query);
-
-    expect(store.dispatch).toHaveBeenCalledWith(setQuery({ query }));
+  describe('getSearchLoading', () => {
+    it('should return search loading state from store', async () => {
+      const loading = await firstValueFrom(service.getSearchLoading());
+      expect(loading).toBe(false);
+      expect(store.select).toHaveBeenCalled();
+      expect(store.select).toHaveBeenCalledTimes(1);
+      const [selector] = store.select.calls.mostRecent().args;
+      expect(selector).toBe(selectSearchLoading);
+    });
   });
 });

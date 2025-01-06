@@ -3,16 +3,73 @@
 // Include the common styles for Angular Material
 @include mat.core();
 
+// Define the typography config
+$custom-typography: mat.define-typography-config(
+  $font-family: 'Lato',
+  $headline-1: mat.define-typography-level(
+      96px,
+      96px,
+      300,
+      $font-family: 'Lato'
+    ),
+  $headline-2: mat.define-typography-level(
+      60px,
+      60px,
+      300,
+      $font-family: 'Lato'
+    ),
+  $headline-3: mat.define-typography-level(
+      48px,
+      50px,
+      400,
+      $font-family: 'Lato'
+    ),
+  $headline-4: mat.define-typography-level(
+      34px,
+      40px,
+      400,
+      $font-family: 'Lato'
+    ),
+  $headline-5: mat.define-typography-level(
+      24px,
+      32px,
+      400,
+      $font-family: 'Lato'
+    ),
+  $headline-6: mat.define-typography-level(
+      20px,
+      32px,
+      500,
+      $font-family: 'Lato'
+    ),
+  $subtitle-1: mat.define-typography-level(
+      16px,
+      28px,
+      400,
+      $font-family: 'Lato'
+    ),
+  $subtitle-2: mat.define-typography-level(
+      14px,
+      22px,
+      500,
+      $font-family: 'Lato'
+    ),
+  $body-1: mat.define-typography-level(16px, 24px, 400, $font-family: 'Lato'),
+  $body-2: mat.define-typography-level(14px, 20px, 400, $font-family: 'Lato'),
+  $caption: mat.define-typography-level(12px, 20px, 400, $font-family: 'Lato'),
+  $button: mat.define-typography-level(14px, 14px, 500, $font-family: 'Lato')
+);
+
 // Define your theme
 @include mat.all-component-themes(
   mat.define-light-theme(
     (
       color: (
-        primary: mat.define-palette(mat.$blue-palette),
+        primary: mat.define-palette(mat.$azure-palette),
         accent: mat.define-palette(mat.$pink-palette),
         warn: mat.define-palette(mat.$red-palette)
       ),
-      typography: mat.define-typography-config(),
+      typography: $custom-typography,
       density: 0
     )
   )

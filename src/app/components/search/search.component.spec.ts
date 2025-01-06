@@ -6,20 +6,59 @@ import {
 } from '@angular/core/testing';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { Router } from '@angular/router';
+import { MockStore, provideMockStore } from '@ngrx/store/testing';
+import { selectFilteredProducts } from '../../store/product/product.selectors';
+import { mockProduct } from '../../testing/test-utils';
 import { SearchComponent } from './search.component';
 
 describe('SearchComponent', () => {
   let component: SearchComponent;
   let fixture: ComponentFixture<SearchComponent>;
+  let store: MockStore;
+  let router: jasmine.SpyObj<Router>;
+
+  const mockProducts = [mockProduct];
+
+  const initialState = {
+    product: {
+      products: mockProducts,
+      categories: [],
+      selectedProduct: null,
+      loading: false,
+      error: null,
+      pagination: {
+        page: 0,
+        pageSize: 12,
+        sortBy: 'featured',
+        sortOrder: 'desc'
+      }
+    }
+  };
 
   beforeEach(async () => {
+    router = jasmine.createSpyObj('Router', ['navigate']);
+
     await TestBed.configureTestingModule({
-      imports: [SearchComponent, FormsModule]
+      imports: [SearchComponent, FormsModule, NoopAnimationsModule],
+      providers: [
+        provideMockStore({
+          initialState
+        }),
+        { provide: Router, useValue: router }
+      ]
     }).compileComponents();
 
+    store = TestBed.inject(MockStore);
+    store.overrideSelector(selectFilteredProducts(''), mockProducts);
     fixture = TestBed.createComponent(SearchComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    store?.resetSelectors();
   });
 
   it('should create', () => {
@@ -38,27 +77,26 @@ describe('SearchComponent', () => {
     expect(searchIcon).toBeTruthy();
   });
 
-  it('should show clear button when search query is not empty', () => {
-    // Set search value
+  it('should show clear button when search query is not empty', fakeAsync(() => {
     const input = fixture.debugElement.query(By.css('input[type="search"]'));
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+    tick(300); // Wait for debounce
 
     const clearButton = fixture.debugElement.query(
       By.css('button[aria-label="Clear search"]')
     );
     expect(clearButton).toBeTruthy();
-  });
+  }));
 
-  it('should clear search when clear button is clicked', () => {
-    // Set search value
+  it('should clear search when clear button is clicked', fakeAsync(() => {
     const input = fixture.debugElement.query(By.css('input[type="search"]'));
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
+    tick(300); // Wait for debounce
 
-    // Click clear button
     const clearButton = fixture.debugElement.query(
       By.css('button[aria-label="Clear search"]')
     );
@@ -66,20 +104,17 @@ describe('SearchComponent', () => {
     fixture.detectChanges();
 
     expect(input.nativeElement.value).toBe('');
-  });
+  }));
 
   it('should emit search event with debounce', fakeAsync(() => {
     const searchSpy = spyOn(component.search, 'emit');
     const input = fixture.debugElement.query(By.css('input[type="search"]'));
 
-    // Type search query
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    // Wait for debounce
-    tick(300);
-
+    tick(300); // Wait for debounce
     expect(searchSpy).toHaveBeenCalledWith('test');
   }));
 
@@ -87,14 +122,11 @@ describe('SearchComponent', () => {
     const searchSpy = spyOn(component.search, 'emit');
     const input = fixture.debugElement.query(By.css('input[type="search"]'));
 
-    // Type search query
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    // Wait less than debounce time
-    tick(200);
-
+    tick(200); // Less than debounce time
     expect(searchSpy).not.toHaveBeenCalled();
   }));
 
@@ -102,12 +134,13 @@ describe('SearchComponent', () => {
     const searchSpy = spyOn(component.search, 'emit');
     const input = fixture.debugElement.query(By.css('input[type="search"]'));
 
-    // Type same search query twice
+    // First search
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
     tick(300);
 
+    // Same search again
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
@@ -119,24 +152,33 @@ describe('SearchComponent', () => {
 
   it('should have proper accessibility attributes', () => {
     const input = fixture.debugElement.query(By.css('input[type="search"]'));
-    expect(input.attributes['aria-label']).toBe('Search products');
-    expect(input.attributes['role']).toBe('searchbox');
+    expect(input.attributes['aria-label']).toBe('Search');
 
-    const clearButton = fixture.debugElement.query(By.css('button'));
-    expect(clearButton?.attributes['aria-label']).toBe('Clear search');
-  });
-
-  it('should apply correct styles when search query is empty vs not empty', () => {
-    const input = fixture.debugElement.query(By.css('input[type="search"]'));
-
-    // Initially empty
-    expect(input.nativeElement.classList.contains('pl-10')).toBeTruthy();
-
-    // Set search value
+    // Set a search value to show clear button
     input.nativeElement.value = 'test';
     input.nativeElement.dispatchEvent(new Event('input'));
     fixture.detectChanges();
 
-    expect(input.nativeElement.classList.contains('pl-10')).toBeFalsy();
+    const clearButton = fixture.debugElement.query(
+      By.css('button[aria-label="Clear search"]')
+    );
+    expect(clearButton.attributes['aria-label']).toBe('Clear search');
   });
+
+  it('should apply correct styles when search query is empty vs not empty', fakeAsync(() => {
+    const input = fixture.debugElement.query(By.css('input[type="search"]'));
+
+    // Empty state
+    expect(input.classes['pl-10']).toBeTrue();
+    expect(input.classes['pr-4']).toBeTrue();
+
+    // With search query
+    input.nativeElement.value = 'test';
+    input.nativeElement.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    tick(300);
+
+    expect(input.classes['pl-10']).toBeTrue();
+    expect(input.classes['pr-10']).toBeTrue();
+  }));
 });

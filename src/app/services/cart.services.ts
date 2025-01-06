@@ -65,8 +65,9 @@ export class CartService {
     }
   }
 
-  clearCart(): void {
+  clearCart(): Promise<void> {
     this.store.dispatch(ClearCart());
+    return Promise.resolve();
   }
 
   saveCart(items: CartItem[]): void {

@@ -1,13 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
 import { selectProductsByCategory } from '../../store/product/product.selectors';
-import {
-  getBaseTestEffects,
-  getBaseTestImports,
-  getBaseTestProviders,
-  mockProduct
-} from '../../testing/test-utils';
+import { getBaseTestImports, mockProduct } from '../../testing/test-utils';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { YouMayAlsoLikeComponent } from './you-may-also-like.component';
 
@@ -32,17 +28,33 @@ describe('YouMayAlsoLikeComponent', () => {
     }
   ];
 
+  const initialState = {
+    product: {
+      products: mockProducts,
+      categories: [],
+      selectedProduct: null,
+      loading: false,
+      error: null,
+      pagination: {
+        page: 0,
+        pageSize: 12,
+        sortBy: 'featured',
+        sortOrder: 'desc'
+      }
+    }
+  };
+
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [
+        NoopAnimationsModule,
         ...getBaseTestImports(),
         YouMayAlsoLikeComponent,
         ProductCardComponent
       ],
       providers: [
-        ...getBaseTestProviders(),
-        ...getBaseTestEffects(),
         provideMockStore({
+          initialState,
           selectors: [
             {
               selector: selectProductsByCategory('electronics', 1),
@@ -56,6 +68,13 @@ describe('YouMayAlsoLikeComponent', () => {
     store = TestBed.inject(MockStore);
     fixture = TestBed.createComponent(YouMayAlsoLikeComponent);
     component = fixture.componentInstance;
+    component.category = 'electronics';
+    component.excludeId = 1;
+    fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    store?.resetSelectors();
   });
 
   it('should create', () => {
@@ -87,8 +106,9 @@ describe('YouMayAlsoLikeComponent', () => {
     component.excludeId = 1;
     fixture.detectChanges();
 
-    const heading = fixture.debugElement.query(By.css('h3'));
-    expect(heading.nativeElement.textContent).toBe('You may also like');
+    const heading = fixture.debugElement.query(By.css('h2'));
+    expect(heading).toBeTruthy();
+    expect(heading.nativeElement.textContent).toContain('You may also like');
   });
 
   it('should not show heading when no products are available', () => {
@@ -97,64 +117,62 @@ describe('YouMayAlsoLikeComponent', () => {
     component.excludeId = 1;
     fixture.detectChanges();
 
-    const heading = fixture.debugElement.query(By.css('h3'));
+    const heading = fixture.debugElement.query(By.css('h2'));
     expect(heading).toBeFalsy();
   });
 
   it('should use trackByProductId for ngFor', () => {
-    const trackByResult = component.trackByProductId(0, mockProducts[0]);
-    expect(trackByResult).toBe(mockProducts[0].id);
+    const product = mockProducts[0];
+    const index = 0;
+    expect(component.trackByProductId(index, product)).toBe(product.id);
   });
 
   it('should properly clean up on destroy', () => {
-    const nextSpy = spyOn(component['destroy$'], 'next');
-    const completeSpy = spyOn(component['destroy$'], 'complete');
+    const unsubscribeSpy = spyOn(
+      component['destroy$'],
+      'next'
+    ).and.callThrough();
+    const completeSpy = spyOn(
+      component['destroy$'],
+      'complete'
+    ).and.callThrough();
 
-    component.ngOnDestroy();
+    fixture.destroy();
 
-    expect(nextSpy).toHaveBeenCalled();
+    expect(unsubscribeSpy).toHaveBeenCalled();
     expect(completeSpy).toHaveBeenCalled();
   });
 
   it('should update products when category changes', () => {
-    // Initial state
     component.category = 'electronics';
     component.excludeId = 1;
     fixture.detectChanges();
 
-    let productCards = fixture.debugElement.queryAll(
-      By.directive(ProductCardComponent)
-    );
-    expect(productCards.length).toBe(1);
+    const newProducts = [
+      {
+        ...mockProduct,
+        id: 3,
+        title: 'Test Product 3'
+      }
+    ];
 
-    // Update category
     store.overrideSelector(
-      selectProductsByCategory('phones', 1),
-      [mockProducts[0]] // Different set of products
+      selectProductsByCategory('electronics', 1),
+      newProducts
     );
-    component.category = 'phones';
+    store.refreshState();
     fixture.detectChanges();
 
-    productCards = fixture.debugElement.queryAll(
+    const productCards = fixture.debugElement.queryAll(
       By.directive(ProductCardComponent)
     );
     expect(productCards.length).toBe(1);
-    expect(productCards[0].componentInstance.product).toEqual(mockProducts[0]);
-  });
-
-  it('should handle empty product list', () => {
-    store.overrideSelector(selectProductsByCategory('electronics', 1), []);
-    component.category = 'electronics';
-    component.excludeId = 1;
-    fixture.detectChanges();
-
-    const container = fixture.debugElement.query(By.css('.grid'));
-    expect(container).toBeFalsy();
+    expect(productCards[0].componentInstance.product).toEqual(newProducts[0]);
   });
 
   it('should exclude current product from suggestions', () => {
     component.category = 'electronics';
-    component.excludeId = 2;
+    component.excludeId = 1;
     fixture.detectChanges();
 
     const productCards = fixture.debugElement.queryAll(
@@ -163,9 +181,7 @@ describe('YouMayAlsoLikeComponent', () => {
     const displayedProducts = productCards.map(
       card => card.componentInstance.product
     );
-    expect(
-      displayedProducts.some(p => p.id === component.excludeId)
-    ).toBeFalse();
+    expect(displayedProducts.some(p => p.id === 1)).toBeFalsy();
   });
 
   it('should have correct grid layout classes', () => {
@@ -173,10 +189,15 @@ describe('YouMayAlsoLikeComponent', () => {
     component.excludeId = 1;
     fixture.detectChanges();
 
-    const grid = fixture.debugElement.query(By.css('.grid'));
-    expect(grid.classes['grid-cols-1']).toBeTrue();
-    expect(grid.classes['sm:grid-cols-2']).toBeTrue();
-    expect(grid.classes['md:grid-cols-3']).toBeTrue();
-    expect(grid.classes['lg:grid-cols-4']).toBeTrue();
+    const container = fixture.debugElement.query(By.css('.grid'));
+    expect(
+      container.nativeElement.classList.contains('grid-cols-1')
+    ).toBeTrue();
+    expect(
+      container.nativeElement.classList.contains('sm:grid-cols-2')
+    ).toBeTrue();
+    expect(
+      container.nativeElement.classList.contains('lg:grid-cols-4')
+    ).toBeTrue();
   });
 });

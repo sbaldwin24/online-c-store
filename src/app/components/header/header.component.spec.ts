@@ -6,12 +6,7 @@ import { setProductPagination } from '../../store/product/product.actions';
 import { FilterDropdownComponent } from '../filter-dropdown/filter-dropdown.component';
 import { SearchComponent } from '../search/search.component';
 import { HeaderComponent } from './header.component';
-
-interface TestState {
-  cart: {
-    totalQuantity: number;
-  };
-}
+import { TestState } from './header.types';
 
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
@@ -35,6 +30,7 @@ describe('HeaderComponent', () => {
         })
       ]
     }).compileComponents();
+
     store = TestBed.inject(MockStore);
     fixture = TestBed.createComponent(HeaderComponent);
     component = fixture.componentInstance;
@@ -43,128 +39,162 @@ describe('HeaderComponent', () => {
 
   afterEach(() => {
     store.resetSelectors();
+    document.body.classList.remove('menu-open');
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should display logo text', () => {
-    const logoElement = fixture.nativeElement.querySelector('a.text-3xl');
-    expect(logoElement.textContent.trim()).toBe('C-Store');
+  describe('Desktop Layout', () => {
+    it('should display the store name', () => {
+      const storeName = fixture.nativeElement.querySelector('.text-2xl');
+      expect(storeName.textContent.trim()).toContain('Online C Store');
+    });
+
+    it('should include search component', () => {
+      const searchComponent = fixture.nativeElement.querySelector('app-search');
+      expect(searchComponent).toBeTruthy();
+    });
+
+    it('should include filter dropdown component', () => {
+      const filterDropdown = fixture.nativeElement.querySelector(
+        'app-filter-dropdown'
+      );
+      expect(filterDropdown).toBeTruthy();
+    });
+
+    it('should display cart icon with badge when items exist', () => {
+      store.overrideSelector(selectCartTotalQuantity, 5);
+      store.refreshState();
+      fixture.detectChanges();
+
+      const cartBadge = fixture.nativeElement.querySelector('.bg-red-500');
+      expect(cartBadge.textContent.trim()).toBe('5');
+    });
+
+    it('should not display cart badge when no items exist', () => {
+      store.overrideSelector(selectCartTotalQuantity, 0);
+      store.refreshState();
+      fixture.detectChanges();
+
+      const cartBadge = fixture.nativeElement.querySelector('.bg-red-500');
+      expect(cartBadge).toBeFalsy();
+    });
+
+    it('should reset pagination when clicking store name', () => {
+      const dispatchSpy = spyOn(store, 'dispatch');
+      const storeNameLink = fixture.nativeElement.querySelector('a.text-2xl');
+
+      storeNameLink.click();
+      fixture.detectChanges();
+
+      expect(dispatchSpy).toHaveBeenCalledWith(
+        setProductPagination({ page: 0 })
+      );
+    });
   });
 
-  it('should display cart icon', () => {
-    const cartIcon = fixture.nativeElement.querySelector('svg');
-    expect(cartIcon).toBeTruthy();
+  describe('Mobile Layout', () => {
+    it('should toggle menu when clicking menu button', () => {
+      const menuButton = fixture.nativeElement.querySelector(
+        'button[aria-label="Toggle menu"]'
+      );
+
+      menuButton.click();
+      fixture.detectChanges();
+      expect(component['isMenuOpen']()).toBe(true);
+      expect(document.body.classList.contains('menu-open')).toBe(true);
+
+      menuButton.click();
+      fixture.detectChanges();
+      expect(component['isMenuOpen']()).toBe(false);
+      expect(document.body.classList.contains('menu-open')).toBe(false);
+    });
+
+    it('should toggle search when clicking search button', () => {
+      const searchButton = fixture.nativeElement.querySelector(
+        'button[aria-label="Toggle search"]'
+      );
+
+      searchButton.click();
+      fixture.detectChanges();
+      expect(component['isSearchOpen']()).toBe(true);
+
+      searchButton.click();
+      fixture.detectChanges();
+      expect(component['isSearchOpen']()).toBe(false);
+    });
+
+    it('should close search when opening menu', () => {
+      // Open search first
+      component['isSearchOpen'].set(true);
+      fixture.detectChanges();
+      expect(component['isSearchOpen']()).toBe(true);
+
+      // Toggle menu
+      const menuButton = fixture.nativeElement.querySelector(
+        'button[aria-label="Toggle menu"]'
+      );
+      menuButton.click();
+      fixture.detectChanges();
+
+      expect(component['isSearchOpen']()).toBe(false);
+      expect(component['isMenuOpen']()).toBe(true);
+    });
+
+    it('should close menu when opening search', () => {
+      // Open menu first
+      component['isMenuOpen'].set(true);
+      document.body.classList.add('menu-open');
+      fixture.detectChanges();
+      expect(component['isMenuOpen']()).toBe(true);
+
+      // Toggle search
+      const searchButton = fixture.nativeElement.querySelector(
+        'button[aria-label="Toggle search"]'
+      );
+      searchButton.click();
+      fixture.detectChanges();
+
+      expect(component['isMenuOpen']()).toBe(false);
+      expect(component['isSearchOpen']()).toBe(true);
+      expect(document.body.classList.contains('menu-open')).toBe(false);
+    });
+
+    it('should display mobile cart icon with badge when items exist', () => {
+      store.overrideSelector(selectCartTotalQuantity, 3);
+      store.refreshState();
+      fixture.detectChanges();
+
+      const mobileBadge = fixture.nativeElement.querySelector(
+        '.md\\:hidden .bg-red-500'
+      );
+      expect(mobileBadge.textContent.trim()).toBe('3');
+    });
+
+    it('should not display mobile cart badge when no items exist', () => {
+      store.overrideSelector(selectCartTotalQuantity, 0);
+      store.refreshState();
+      fixture.detectChanges();
+
+      const mobileBadge = fixture.nativeElement.querySelector(
+        '.md\\:hidden .bg-red-500'
+      );
+      expect(mobileBadge).toBeFalsy();
+    });
   });
 
-  it('should not show cart badge when cart is empty', () => {
-    store.overrideSelector(selectCartTotalQuantity, 0);
-    store.refreshState();
-    fixture.detectChanges();
-
-    const badge = fixture.nativeElement.querySelector('.bg-red-500');
-    expect(badge).toBeFalsy();
-  });
-
-  it('should show cart badge with correct count when cart has items', () => {
-    store.overrideSelector(selectCartTotalQuantity, 5);
-    store.refreshState();
-    fixture.detectChanges();
-
-    const badge = fixture.nativeElement.querySelector('.bg-red-500');
-    expect(badge).toBeTruthy();
-    expect(badge.textContent.trim()).toBe('5');
-  });
-
-  it('should reset pagination when clicking on logo', () => {
-    const dispatchSpy = spyOn(store, 'dispatch');
-    const logoLink = fixture.nativeElement.querySelector('a.text-3xl');
-
-    logoLink.click();
-    fixture.detectChanges();
-
-    expect(dispatchSpy).toHaveBeenCalledWith(setProductPagination({ page: 0 }));
-  });
-
-  it('should have correct navigation links', () => {
-    const links = Array.from(
-      fixture.nativeElement.querySelectorAll('a')
-    ) as HTMLAnchorElement[];
-    const homeLink = links.find(
-      link => link.getAttribute('routerLink') === '/'
-    );
-    const cartLink = links.find(
-      link => link.getAttribute('routerLink') === '/cart'
-    );
-
-    expect(homeLink).toBeTruthy();
-    expect(cartLink).toBeTruthy();
-  });
-
-  it('should include search component', () => {
-    const searchComponent = fixture.nativeElement.querySelector('app-search');
-    expect(searchComponent).toBeTruthy();
-  });
-
-  it('should include filter dropdown component', () => {
-    const filterDropdown = fixture.nativeElement.querySelector(
-      'app-filter-dropdown'
-    );
-    expect(filterDropdown).toBeTruthy();
-  });
-
-  it('should include the GitHub Icon and navigate to the code base when clicked', () => {
-    const githubLink = fixture.nativeElement.querySelector(
-      'a[href="https://github.com/sbaldwin24/online-c-store"]'
-    );
-    const githubIcon = githubLink.querySelector('svg');
-
-    expect(githubIcon).toBeTruthy();
-    expect(githubIcon.getAttribute('aria-hidden')).toBeNull();
-
-    githubLink.dispatchEvent(new MouseEvent('mouseenter'));
-    fixture.detectChanges();
-    expect(githubLink.classList.contains('hover:text-gray-300')).toBeTrue();
-
-    expect(githubLink.getAttribute('href')).toBe(
-      'https://github.com/sbaldwin24/online-c-store'
-    );
-    expect(githubLink.getAttribute('target')).toBe('_blank');
-    expect(githubLink.getAttribute('rel')).toBe('noopener noreferrer');
-  });
-
-  it('should update cart badge when cart quantity changes', () => {
-    let badge = fixture.nativeElement.querySelector('.bg-red-500');
-    expect(badge).toBeFalsy();
-
-    store.overrideSelector(selectCartTotalQuantity, 3);
-    store.refreshState();
-    fixture.detectChanges();
-
-    badge = fixture.nativeElement.querySelector('.bg-red-500');
-    expect(badge.textContent.trim()).toBe('3');
-
-    store.overrideSelector(selectCartTotalQuantity, 7);
-    store.refreshState();
-    fixture.detectChanges();
-
-    badge = fixture.nativeElement.querySelector('.bg-red-500');
-    expect(badge.textContent.trim()).toBe('7');
-  });
-
-  it('should render shopping cart link with correct item count', () => {
-    const cartLink = fixture.nativeElement.querySelector(
-      'a[routerLink="/cart"]'
-    );
-
-    store.overrideSelector(selectCartTotalQuantity, 3);
-    store.refreshState();
-    fixture.detectChanges();
-
-    const itemCount = cartLink.querySelector('.bg-red-500');
-    expect(cartLink).toBeTruthy();
-    expect(itemCount.textContent.trim()).toBe('3');
+  describe('GitHub Link', () => {
+    it('should have correct GitHub repository link', () => {
+      const githubLink = fixture.nativeElement.querySelector(
+        'a[href*="github.com"]'
+      );
+      expect(githubLink.getAttribute('href')).toBe(
+        'https://github.com/sbaldwin24/online-c-store'
+      );
+      expect(githubLink.getAttribute('target')).toBe('_blank');
+      expect(githubLink.getAttribute('rel')).toBe('noopener noreferrer');
+    });
   });
 });

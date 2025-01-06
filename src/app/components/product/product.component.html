@@ -15,53 +15,110 @@
   <div class="bg-white rounded-lg shadow-sm p-6">
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
       <!-- Image Gallery Section -->
-      <div class="flex flex-row-reverse gap-4">
+      <div class="flex flex-row-reverse gap-6">
         <!-- Featured Image -->
         <div class="flex-1">
           <div
-            class="relative aspect-[2/1] overflow-hidden bg-gray-100 rounded-lg"
+            class="relative w-full h-[600px] overflow-hidden bg-gray-100 rounded-lg group"
           >
             <img
               [ngSrc]="getSelectedImageUrl()"
               [alt]="product()!.title"
-              width="400"
-              height="200"
-              class="w-full h-full object-cover"
+              width="800"
+              height="600"
+              class="w-full h-full object-contain"
+              [class.opacity-0]="isImageTransitioning()"
+              (load)="onImageLoad()"
               priority
             />
 
             @if (product()!.discountPercentage > 0) {
               <div
-                class="absolute top-2 right-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded"
+                class="absolute top-4 right-4 bg-red-500 text-white text-sm font-bold px-3 py-1.5 rounded"
               >
                 -{{ product()!.discountPercentage.toFixed(0) }}%
               </div>
+            }
+
+            <!-- Carousel Navigation -->
+            @if (hasMultipleImages()) {
+              <!-- Previous Button -->
+              <button
+                type="button"
+                (click)="previousImage()"
+                class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Previous image"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M15.75 19.5L8.25 12l7.5-7.5"
+                  />
+                </svg>
+              </button>
+
+              <!-- Next Button -->
+              <button
+                type="button"
+                (click)="nextImage()"
+                class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Next image"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="2"
+                  stroke="currentColor"
+                  class="w-6 h-6"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                  />
+                </svg>
+              </button>
             }
           </div>
         </div>
 
         <!-- Thumbnail Images -->
-        <div class="flex flex-col gap-2 w-20">
+        <div class="flex flex-col gap-3 w-24">
+          <!-- Thumbnail Button -->
           <button
             type="button"
-            class="relative aspect-square overflow-hidden rounded-md bg-gray-100 hover:ring-2 hover:ring-blue-500 transition-all"
-            [class.ring-2]="selectedImage() === product()!.thumbnail"
-            [class.ring-blue-500]="selectedImage() === product()!.thumbnail"
+            class="relative aspect-square overflow-hidden rounded-lg bg-gray-100 hover:ring-2 hover:ring-blue-500 transition-all"
+            [class.ring-2]="
+              !selectedImage() || selectedImage() === product()!.thumbnail
+            "
+            [class.ring-blue-500]="
+              !selectedImage() || selectedImage() === product()!.thumbnail
+            "
             (click)="selectImage(product()!.thumbnail)"
           >
             <img
               [ngSrc]="thumbnail()"
               [alt]="'Thumbnail of ' + product()!.title"
-              width="80"
-              height="80"
+              width="96"
+              height="96"
               class="w-full h-full object-cover"
             />
           </button>
 
-          @for (image of webpImages(); track image) {
+          <!-- Product Images -->
+          @for (image of webpImages(); track $index) {
             <button
               type="button"
-              class="relative aspect-square overflow-hidden rounded-md bg-gray-100 hover:ring-2 hover:ring-blue-500 transition-all"
+              class="relative aspect-square overflow-hidden rounded-lg bg-gray-100 hover:ring-2 hover:ring-blue-500 transition-all"
               [class.ring-2]="selectedImage() === image"
               [class.ring-blue-500]="selectedImage() === image"
               (click)="selectImage(image)"
@@ -69,8 +126,8 @@
               <img
                 [ngSrc]="image"
                 [alt]="'Image ' + $index + ' of ' + product()!.title"
-                width="80"
-                height="80"
+                width="96"
+                height="96"
                 class="w-full h-full object-cover"
               />
             </button>
@@ -134,18 +191,22 @@
         <div class="pt-4">
           <button
             type="button"
-            class="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full bg-blue-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             (click)="addToCart()"
             [disabled]="product()!.stock === 0"
           >
-            @if (product()!.stock === 0) {
-              Out of Stock
-            } @else {
-              Add to Cart
-            }
+            {{ product()!.stock === 0 ? 'Out of Stock' : 'Add to Cart' }}
           </button>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- You May Also Like Section -->
+  <div class="mt-12 bg-white rounded-lg shadow-sm p-6">
+    <app-you-may-also-like
+      [category]="product()?.category || null"
+      [excludeId]="product()?.id"
+    ></app-you-may-also-like>
   </div>
 }

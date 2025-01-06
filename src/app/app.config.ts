@@ -1,53 +1,39 @@
-import { provideHttpClient, withFetch } from '@angular/common/http';
-import {
-  APP_INITIALIZER,
-  ApplicationConfig,
-  importProvidersFrom,
-  isDevMode
-} from '@angular/core';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { provideHttpClient } from '@angular/common/http';
+import { ApplicationConfig } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import {
-  PreloadAllModules,
   provideRouter,
-  withPreloading
+  withComponentInputBinding,
+  withRouterConfig,
+  withViewTransitions
 } from '@angular/router';
 import { provideEffects } from '@ngrx/effects';
 import { provideStore } from '@ngrx/store';
-import { provideStoreDevtools } from '@ngrx/store-devtools';
 import { routes } from './app.routes';
-import { CartService } from './services/cart.services';
-import { reducers } from './store/app.state';
 import { CartEffects } from './store/cart/cart.effects';
+import { cartReducer } from './store/cart/cart.reducer';
 import { ProductEffects } from './store/product/product.effects';
-import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-
-export function initializeCart(cartService: CartService) {
-  return () => {
-    cartService.loadCart();
-  };
-}
+import { ProductReducer } from './store/product/product.reducer';
+import { searchReducer } from './store/search/search.reducer';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideRouter(routes, withPreloading(PreloadAllModules)),
-    provideStore(reducers),
-    provideEffects([ProductEffects, CartEffects]),
-    provideStoreDevtools({
-      maxAge: 25,
-      logOnly: !isDevMode(),
-      autoPause: true,
-      trace: false,
-      traceLimit: 75
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withViewTransitions(),
+      withRouterConfig({
+        paramsInheritanceStrategy: 'always',
+        onSameUrlNavigation: 'reload'
+      })
+    ),
+    provideStore({
+      product: ProductReducer,
+      cart: cartReducer,
+      search: searchReducer
     }),
+    provideEffects([ProductEffects, CartEffects]),
     provideAnimations(),
-    provideHttpClient(withFetch()),
-    importProvidersFrom(MatSnackBarModule),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: initializeCart,
-      deps: [CartService],
-      multi: true
-    }, provideAnimationsAsync()
+    provideHttpClient()
   ]
 };

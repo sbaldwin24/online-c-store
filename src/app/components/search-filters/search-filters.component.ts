@@ -124,11 +124,34 @@ export class SearchFiltersComponent {
   @Output() filterChange = new EventEmitter<FilterUpdate>();
 
   selectedCategoryIndex = signal(0);
-  selectedRating: number | null = null;
+  selectedCategories: string[] = [];
+  selectedRating: number = 0;
   priceRange: PriceRange = {
     min: null,
     max: null
   };
+
+  toggleCategory(category: string) {
+    const index = this.selectedCategories.indexOf(category);
+    if (index === -1) {
+      this.selectedCategories.push(category);
+    } else {
+      this.selectedCategories.splice(index, 1);
+    }
+    this.emitFilterUpdate({ categories: this.selectedCategories });
+  }
+
+  clearFilters() {
+    this.selectedCategories = [];
+    this.priceRange = { min: null, max: null };
+    this.selectedRating = 0;
+    this.selectedCategoryIndex.set(0);
+    this.emitFilterUpdate({
+      categories: [],
+      priceRange: { min: null, max: null },
+      rating: 0
+    });
+  }
 
   onCategoryChange(index: number) {
     this.selectedCategoryIndex.set(index);
@@ -142,7 +165,9 @@ export class SearchFiltersComponent {
   }
 
   onRatingChange() {
-    this.emitFilterUpdate({ rating: this.selectedRating });
+    this.emitFilterUpdate({
+      rating: this.selectedRating > 0 ? this.selectedRating : 0
+    });
   }
 
   private emitFilterUpdate(update: FilterUpdate) {

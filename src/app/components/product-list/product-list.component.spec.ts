@@ -1,8 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
+import { of } from 'rxjs';
 import { Product } from '../../models/product.model';
 import {
   loadProducts,
@@ -55,7 +57,7 @@ describe('ProductListComponent', () => {
         ProductListComponent,
         ProductCardComponent,
         MatPaginatorModule,
-        BrowserAnimationsModule
+        NoopAnimationsModule
       ],
       providers: [
         provideMockStore({
@@ -63,7 +65,18 @@ describe('ProductListComponent', () => {
             { selector: selectPaginatedProducts, value: mockProducts },
             { selector: selectTotalProducts, value: mockProducts.length }
           ]
-        })
+        }),
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            params: of({}),
+            queryParams: of({}),
+            snapshot: {
+              params: {},
+              queryParams: {}
+            }
+          }
+        }
       ]
     }).compileComponents();
 

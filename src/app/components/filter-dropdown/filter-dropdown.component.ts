@@ -1,6 +1,8 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, ViewportScroller } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { Product } from '../../models/product.model';
 import { setProductPagination } from '../../store/product/product.actions';
 
 type SortOrder = 'asc' | 'desc';
@@ -112,6 +114,8 @@ const SORT_CONFIGS: Record<
 })
 export class FilterDropdownComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
+  private readonly viewportScroller = inject(ViewportScroller);
+  private readonly router = inject(Router);
 
   protected readonly isOpen = signal(false);
   protected readonly currentFilter = signal<
@@ -142,5 +146,13 @@ export class FilterDropdownComponent implements OnInit, OnDestroy {
 
     const config = SORT_CONFIGS[filter];
     this.store.dispatch(setProductPagination(config));
+  }
+
+  protected onProductSelect(product: Product): void {
+    this.router.navigate(['/product', product.id]).then(() => {
+      setTimeout(() => {
+        this.viewportScroller.scrollToPosition([0, 0]);
+      });
+    });
   }
 }

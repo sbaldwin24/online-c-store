@@ -34,7 +34,7 @@ export class CheckoutComponent {
   protected readonly subtotal = this.store.selectSignal(selectSubtotal);
   protected readonly discount = this.store.selectSignal(selectDiscount);
   protected readonly cartTotal = this.store.selectSignal(selectCartTotal);
-  protected readonly isSubmitting = signal(false);
+  public isSubmitting = signal(false);
 
   public readonly checkoutForm: FormGroup;
 
@@ -118,7 +118,7 @@ export class CheckoutComponent {
     });
   }
 
-  protected async confirmOrder(): Promise<void> {
+  public async confirmOrder(): Promise<void> {
     if (this.checkoutForm.valid) {
       try {
         this.isSubmitting.set(true);
@@ -127,7 +127,7 @@ export class CheckoutComponent {
         await new Promise(resolve => setTimeout(resolve, 2000));
 
         // Process the order
-        this.cartService.clearCart();
+        await this.cartService.clearCart();
 
         // Show success message
         this.snackBar.open('Order placed successfully!', 'Close', {

@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { Router } from '@angular/router';
 import { MockStore, provideMockStore } from '@ngrx/store/testing';
-import { combineLatest } from 'rxjs';
 import { CartItem } from '../../models/cart.model';
 import { CartService } from '../../services/cart.services';
 import {
@@ -9,10 +9,6 @@ import {
   IncrementItemQuantity,
   RemoveCartItem
 } from '../../store/cart/cart.actions';
-import {
-  selectCartItems,
-  selectCartTotal
-} from '../../store/cart/cart.selectors';
 import { CartComponent } from './cart.component';
 
 describe('CartComponent', () => {
@@ -23,140 +19,191 @@ describe('CartComponent', () => {
   let cartService: jasmine.SpyObj<CartService>;
 
   const mockCartItems: CartItem[] = [
-    {
-      id: 1,
-      name: 'Test Product',
-      price: 99.99,
-      quantity: 2
-    }
+    { id: 1, name: 'Test Product 1', price: 10, quantity: 2 },
+    { id: 2, name: 'Test Product 2', price: 20, quantity: 1 }
   ];
 
-  const initialState = {
-    cart: {
-      items: mockCartItems,
-      totalQuantity: 2,
-      subtotal: 199.98,
-      discount: 0,
-      total: 199.98
-    }
-  };
-
   beforeEach(async () => {
-    router = jasmine.createSpyObj('Router', ['navigate']);
-    cartService = jasmine.createSpyObj('CartService', ['loadCart']);
+    const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    const cartServiceSpy = jasmine.createSpyObj('CartService', ['loadCart']);
 
     await TestBed.configureTestingModule({
-      imports: [CartComponent],
+      imports: [CartComponent, BrowserAnimationsModule],
       providers: [
-        provideMockStore({
-          initialState,
-          selectors: [
-            { selector: selectCartItems, value: mockCartItems },
-            { selector: selectCartTotal, value: 199.98 }
-          ]
-        }),
-        { provide: Router, useValue: router },
-        { provide: CartService, useValue: cartService }
+        provideMockStore(),
+        { provide: Router, useValue: routerSpy },
+        { provide: CartService, useValue: cartServiceSpy }
       ]
     }).compileComponents();
 
     store = TestBed.inject(MockStore);
+    router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
+    cartService = TestBed.inject(CartService) as jasmine.SpyObj<CartService>;
+  });
+
+  beforeEach(() => {
     fixture = TestBed.createComponent(CartComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+
+    // Set up default store selectors
+    store.overrideSelector('selectCartItems', mockCartItems);
+    store.overrideSelector('selectCartTotal', 40);
   });
 
   afterEach(() => {
-    store.resetSelectors();
+    store?.resetSelectors();
   });
 
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should load cart on init', () => {
-    expect(cartService.loadCart).toHaveBeenCalled();
-  });
+  describe('initialization', () => {
+    it('should load cart on init', () => {
+      component.ngOnInit();
+      expect(cartService.loadCart).toHaveBeenCalled();
+    });
 
-  it('should display cart items', done => {
-    component.cartItems$.subscribe(items => {
-      expect(items).toEqual(mockCartItems);
-      done();
+    it('should handle error when loading cart fails', () => {
+      cartService.loadCart.and.throwError('Failed to load cart');
+      spyOn(console, 'error');
+
+      component.ngOnInit();
+
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to load cart:',
+        jasmine.any(Error)
+      );
+    });
+
+    it('should not load cart twice if already initialized', () => {
+      component.ngOnInit();
+      component.ngOnInit();
+      expect(cartService.loadCart).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('should display cart total', done => {
-    component.cartTotal$.subscribe(total => {
-      expect(total).toBe(199.98);
-      done();
+  describe('cart operations', () => {
+    it('should increment item quantity', () => {
+      spyOn(store, 'dispatch');
+      component.increment(1);
+      expect(store.dispatch).toHaveBeenCalledWith(
+        IncrementItemQuantity({ id: 1 })
+      );
+    });
+
+    it('should handle error when incrementing fails', () => {
+      spyOn(store, 'dispatch').and.throwError('Failed to increment');
+      spyOn(console, 'error');
+
+      component.increment(1);
+
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to increment item:',
+        jasmine.any(Error)
+      );
+    });
+
+    it('should decrement item quantity', () => {
+      spyOn(store, 'dispatch');
+      component.decrement(1);
+      expect(store.dispatch).toHaveBeenCalledWith(
+        DecrementItemQuantity({ id: 1 })
+      );
+    });
+
+    it('should handle error when decrementing fails', () => {
+      spyOn(store, 'dispatch').and.throwError('Failed to decrement');
+      spyOn(console, 'error');
+
+      component.decrement(1);
+
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to decrement item:',
+        jasmine.any(Error)
+      );
+    });
+
+    it('should remove item from cart', () => {
+      spyOn(store, 'dispatch');
+      component.remove(1);
+      expect(store.dispatch).toHaveBeenCalledWith(RemoveCartItem({ id: 1 }));
+    });
+
+    it('should handle error when removing item fails', () => {
+      spyOn(store, 'dispatch').and.throwError('Failed to remove');
+      spyOn(console, 'error');
+
+      component.remove(1);
+
+      expect(console.error).toHaveBeenCalledWith(
+        'Failed to remove item:',
+        jasmine.any(Error)
+      );
     });
   });
 
-  it('should increment item quantity', () => {
-    const dispatchSpy = spyOn(store, 'dispatch');
-    component.increment(1);
-    expect(dispatchSpy).toHaveBeenCalledWith(IncrementItemQuantity({ id: 1 }));
-  });
+  describe('checkout', () => {
+    it('should navigate to checkout page', () => {
+      router.navigate.and.returnValue(Promise.resolve(true));
+      component.checkout();
+      expect(router.navigate).toHaveBeenCalledWith(['/checkout']);
+    });
 
-  it('should decrement item quantity', () => {
-    const dispatchSpy = spyOn(store, 'dispatch');
-    component.decrement(1);
-    expect(dispatchSpy).toHaveBeenCalledWith(DecrementItemQuantity({ id: 1 }));
-  });
+    it('should handle navigation error', async () => {
+      router.navigate.and.returnValue(Promise.reject('Navigation failed'));
+      spyOn(console, 'error');
 
-  it('should remove item from cart', () => {
-    const dispatchSpy = spyOn(store, 'dispatch');
-    component.remove(1);
-    expect(dispatchSpy).toHaveBeenCalledWith(RemoveCartItem({ id: 1 }));
-  });
+      component.checkout();
+      await fixture.whenStable();
 
-  it('should navigate to checkout', () => {
-    component.checkout();
-    expect(router.navigate).toHaveBeenCalledWith(['/checkout']);
-  });
+      expect(console.error).toHaveBeenCalledWith(
+        'Navigation failed:',
+        'Navigation failed'
+      );
+    });
 
-  it('should update when cart items change', done => {
-    const newCartItems = [
-      ...mockCartItems,
-      {
-        id: 2,
-        name: 'Another Product',
-        price: 49.99,
-        quantity: 1
-      }
-    ];
+    it('should handle error when router is not available', () => {
+      router.navigate = undefined as any;
+      spyOn(console, 'error');
 
-    store.overrideSelector(selectCartItems, newCartItems);
-    store.overrideSelector(selectCartTotal, 249.97);
-    store.refreshState();
+      component.checkout();
 
-    component.cartItems$.subscribe(items => {
-      expect(items).toEqual(newCartItems);
-      done();
+      expect(console.error).not.toHaveBeenCalled();
     });
   });
 
-  it('should clean up subscriptions on destroy', () => {
-    const nextSpy = spyOn(component['destroy$'], 'next');
-    const completeSpy = spyOn(component['destroy$'], 'complete');
+  describe('error handling in observables', () => {
+    it('should handle error in cartItems$ observable', done => {
+      store.overrideSelector('selectCartItems', undefined as any);
 
-    component.ngOnDestroy();
-
-    expect(nextSpy).toHaveBeenCalled();
-    expect(completeSpy).toHaveBeenCalled();
-  });
-
-  it('should handle empty cart', done => {
-    store.overrideSelector(selectCartItems, []);
-    store.overrideSelector(selectCartTotal, 0);
-    store.refreshState();
-
-    combineLatest([component.cartItems$, component.cartTotal$]).subscribe({
-      next: ([items, total]) => {
+      component.cartItems$.subscribe(items => {
         expect(items).toEqual([]);
+        done();
+      });
+    });
+
+    it('should handle error in cartTotal$ observable', done => {
+      store.overrideSelector('selectCartTotal', undefined as any);
+
+      component.cartTotal$.subscribe(total => {
         expect(total).toBe(0);
         done();
-      }
+      });
+    });
+  });
+
+  describe('cleanup', () => {
+    it('should complete and unsubscribe from destroy$ subject on destroy', () => {
+      spyOn(component['destroy$'], 'next');
+      spyOn(component['destroy$'], 'complete');
+      spyOn(component['destroy$'], 'unsubscribe');
+
+      component.ngOnDestroy();
+
+      expect(component['destroy$'].next).toHaveBeenCalled();
+      expect(component['destroy$'].complete).toHaveBeenCalled();
+      expect(component['destroy$'].unsubscribe).toHaveBeenCalled();
     });
   });
 });

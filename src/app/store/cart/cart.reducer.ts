@@ -86,7 +86,16 @@ export const cartReducer = createReducer(
           product: {
             id: item.id,
             title: item.name,
-            price: item.price
+            price: item.price,
+            description: '',
+            category: '',
+            thumbnail: '',
+            images: [],
+            brand: '',
+            rating: 0,
+            stock: 0,
+            discountPercentage: 0,
+            ...item.product
           },
           quantity: item.quantity
         }
@@ -96,7 +105,9 @@ export const cartReducer = createReducer(
 
     return {
       ...state,
-      items: newItems
+      items: newItems,
+      appliedPromoCode: state.appliedPromoCode,
+      discount: state.discount
     };
   })
 );

@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngrx/store';
+import { map } from 'rxjs/operators';
 import { selectCartTotalQuantity } from '../../store/cart/cart.selectors';
 import { setProductPagination } from '../../store/product/product.actions';
 import { FilterDropdownComponent } from '../filter-dropdown/filter-dropdown.component';
@@ -50,7 +51,10 @@ import { SearchComponent } from '../search/search.component';
                   d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                 />
               </svg>
-              @if (cartItemsCount$ | async) {
+              @if (
+                (cartItemsCount$ | async) !== null &&
+                (cartItemsCount$ | async)! > 0
+              ) {
                 <span
                   class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
                 >
@@ -173,7 +177,10 @@ import { SearchComponent } from '../search/search.component';
                     d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
                   />
                 </svg>
-                @if (cartItemsCount$ | async) {
+                @if (
+                  (cartItemsCount$ | async) !== null &&
+                  (cartItemsCount$ | async)! > 0
+                ) {
                   <span
                     class="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
                   >
@@ -243,9 +250,9 @@ import { SearchComponent } from '../search/search.component';
 })
 export class HeaderComponent {
   private readonly store = inject(Store);
-  protected readonly cartItemsCount$ = this.store.select(
-    selectCartTotalQuantity
-  );
+  protected readonly cartItemsCount$ = this.store
+    .select(selectCartTotalQuantity)
+    .pipe(map((count: number | null): number => count ?? 0));
 
   // Mobile menu state using signals
   protected readonly isMenuOpen = signal<boolean>(false);
@@ -260,7 +267,6 @@ export class HeaderComponent {
     if (this.isSearchOpen()) {
       this.isSearchOpen.set(false);
     }
-    // Toggle body class for preventing scroll
     document.body.classList.toggle('menu-open', this.isMenuOpen());
   }
 

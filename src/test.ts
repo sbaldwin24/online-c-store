@@ -1,24 +1,9 @@
-import { getTestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { TestBed } from '@angular/core/testing';
 import {
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting
 } from '@angular/platform-browser-dynamic/testing';
-import 'zone.js';
-import 'zone.js/testing';
-
-// First, initialize the Angular testing environment.
-getTestBed().initTestEnvironment(
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting(),
-  {
-    errorOnUnknownElements: true,
-    errorOnUnknownProperties: true
-  }
-);
-
-// This file is required by karma.conf.js and loads recursively all the .spec and framework files
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { provideEffects } from '@ngrx/effects';
 import { provideMockStore } from '@ngrx/store/testing';
@@ -27,10 +12,37 @@ import 'zone.js/testing';
 import { CartEffects } from './app/store/cart/cart.effects';
 import { ProductEffects } from './app/store/product/product.effects';
 
+// Prevent TestBed from being used before initialization
+try {
+  TestBed.initTestEnvironment(
+    BrowserDynamicTestingModule,
+    platformBrowserDynamicTesting(),
+    {
+      errorOnUnknownElements: true,
+      errorOnUnknownProperties: true,
+      teardown: { destroyAfterEach: true }
+    }
+  );
+} catch (e) {
+  console.error('Error initializing test environment:', e);
+  if (
+    e instanceof Error &&
+    e.message.includes('DynamicTestModule has already been loaded')
+  ) {
+    console.warn('Test environment was already initialized');
+  } else {
+    throw e;
+  }
+}
+
 // Setup default test module configuration
 const defaultTestModuleConfig = {
-  imports: [BrowserAnimationsModule, HttpClientTestingModule],
-  providers: [provideMockStore(), provideEffects([CartEffects, ProductEffects])]
+  imports: [BrowserAnimationsModule],
+  providers: [
+    provideMockStore(),
+    provideEffects([CartEffects, ProductEffects]),
+    provideHttpClient()
+  ]
 };
 
 // Export helper function to configure test modules
