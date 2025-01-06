@@ -5,11 +5,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "watch": "ng build --watch --configuration development",
-    "build": "ng build --base-href=/online-c-store/",
-    "lint": "ng lint --format json",
+    "watch": "npm run --watch --configuration development",
+    "build": "npm run build --base-href=/online-c-store/",
+    "lint": "npm run --format json",
     "lint:fix": "ng lint --fix",
-    "test": "ng test",
+    "test": "npm run test",
     "test-with-coverage": "ng test --watch --code-coverage"
   },
   "engines": {
@@ -62,3 +62,4 @@
     "typescript-eslint": "8.0.0"
   }
 }
+dist/online-c-store/browser
