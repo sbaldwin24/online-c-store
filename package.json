@@ -1,7 +1,7 @@
 {
   "name": "online-c-store",
   "description": "Online store built with Angular v18.2, NgRx, and Tailwind CSS",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -44,6 +44,7 @@
     "@types/jasmine": "~5.1.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
+    "angular-cli-ghpages": "^2.0.3",
     "angular-eslint": "18.2.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.17.0",

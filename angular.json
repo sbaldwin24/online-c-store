@@ -131,6 +131,9 @@
             "tsConfig": "tsconfig.spec.json",
             "watch": false
           }
+        },
+        "deploy": {
+          "builder": "angular-cli-ghpages:deploy"
         }
       },
       "prefix": "app",
